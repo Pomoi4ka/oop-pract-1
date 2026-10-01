@@ -16,7 +16,6 @@ struct context_alloc_hdr {
 
 struct context {
     struct context_alloc_hdr *allocations;
-    char **strings;
     jmp_buf exception_handler;
 };
 

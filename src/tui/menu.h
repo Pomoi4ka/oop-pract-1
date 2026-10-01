@@ -13,18 +13,14 @@ struct menu_command {
     void (*run)(struct menu *);
 };
 
-struct menu_state_vtable {
-    /* yes, it's virtual field, it's const so it's safe :) */
-    const struct menu_command *commands;
-};
-
 struct menu_state {
-    struct menu_state_vtable const *vptr;
+    const struct menu_command *commands;
 };
 
 struct menu *menu_create(struct context *);
 void menu_input(struct menu *m);
-const char *menu_get_input(struct menu *m);
 void menu_set_state(struct menu *m, struct menu_state *);
+
+const char *menu_get_input(struct menu *m);
 
 #endif /* MENU_H_ */

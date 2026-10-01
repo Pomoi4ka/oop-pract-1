@@ -2,10 +2,6 @@
 
 #include <stdio.h>
 
-struct main_menu_state {
-    struct menu_state_vtable const *vptr;
-};
-
 static void new_order(struct menu *);
 static void nothing() {}
 
@@ -18,17 +14,12 @@ static const struct menu_command commands[] = {
     {NULL, NULL, NULL}
 };
 
-static const struct menu_state_vtable vtable = {
-    commands
-};
-
 struct menu_state *main_menu_create(struct context *ctx)
 {
-    struct main_menu_state *s;
+    struct menu_state *s;
     s = context_alloc(ctx, sizeof *s);
-    s->vptr = &vtable;
-
-    return (void *) s;
+    s->commands = commands;
+    return s;
 }
 
 static void new_order(struct menu *)

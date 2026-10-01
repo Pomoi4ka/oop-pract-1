@@ -6,8 +6,8 @@
 
 struct menu {
     struct menu_state *state;
-    int match;
     char *input;
+    int match;
 };
 
 static void menu__help(struct menu *m);
@@ -48,7 +48,7 @@ static int menu__match_command(struct menu *m, struct menu_command const *cmd)
 static void menu__dispatch(struct menu *m)
 {
     m->match = 0;
-    if (menu__match_command(m, m->state->vptr->commands)) return;
+    if (menu__match_command(m, m->state->commands)) return;
     if (menu__match_command(m, common_commands)) return;
 }
 
@@ -76,7 +76,7 @@ static void menu__help(struct menu *m)
 {
     const struct menu_command *p[3], **i;
     int l, max_len = 0;
-    p[0] = m->state->vptr->commands;
+    p[0] = m->state->commands;
     p[1] = common_commands;
     p[2] = NULL;
 
@@ -87,7 +87,7 @@ static void menu__help(struct menu *m)
         }
     }
 
-    p[0] = m->state->vptr->commands;
+    p[0] = m->state->commands;
     p[1] = common_commands;
     p[2] = NULL;
 
