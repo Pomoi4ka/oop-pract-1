@@ -19,4 +19,6 @@ struct delivery_method {
     const struct delivery_method_vtable *vptr;
 };
 
+struct delivery_method *standard_delivery_method_create(struct context *ctx);
+
 #endif /* DELIVERY_METHOD_H_ */

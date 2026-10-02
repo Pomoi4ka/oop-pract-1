@@ -2,5 +2,5 @@
 
 struct courier {
     const char *name;
-    int notes;
+    int capabilities;
 };
