@@ -100,24 +100,22 @@ void order_print(const struct order *o)
     }
 }
 
-void order_set_kind(struct order *o, struct order_kind *kind)
-{
-    o->kind = kind;
-}
-
 int order_assign_courier(struct order *o, struct courier *c)
 {
-    if (!o->kind->vptr->needs_courier(o)) return 0;
+    if (!o->kind->vptr->needs_courier(o->kind, o)) return 0;
     o->courier = c;
     return 1;
 }
 
 int order_change_status(struct order *o, enum order_status new_status)
 {
-    return o->kind->vptr->change_status(o->kind, new_status);
+    if (!o->kind->vptr->allows_transition(o->kind, new_status))
+        return 0;
+    o->status = new_status;
+    return 1;
 }
 
-size_t order_items_count(const struct order *o)
+size_t order_get_items_count(const struct order *o)
 {
     return o->info.items_count;
 }
@@ -134,6 +132,5 @@ const struct order_kind *order_get_order_kind(const struct order *order)
 
 void order_set_order_kind(struct order *order, struct order_kind *kind)
 {
-    context_free(order->kind);
     order->kind = kind;
 }

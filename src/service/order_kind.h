@@ -18,12 +18,17 @@ struct allowed_order_status_transition {
     enum order_status from, to;
 };
 
+#define ORDER_KIND_METHODS \
+    M(float, calc_cost, (kind, order), (struct order_kind *, struct order *)) \
+    M(float, calc_estimated_time, (kind, order), (struct order_kind *, struct order *)) \
+    M(int, needs_courier, (kind, order), (struct order_kind *, struct order *)) \
+    M(void, print, (kind), (struct order_kind *)) \
+    M(int, allows_transition, (kind, status), (struct order_kind *, enum order_status)) \
+
 struct order_kind_vtable {
-    float (*calc_cost)(struct order *);
-    float (*calc_estimated_time)(struct order *);
-    int (*needs_courier)(struct order *);
-    void (*print)(struct order_kind *);
-    int (*change_status)(struct order_kind *, enum order_status);
+#define M(ret, name, pnames, ptypes) ret (*name)ptypes;
+    ORDER_KIND_METHODS
+#undef M
 };
 
 struct order_kind {
