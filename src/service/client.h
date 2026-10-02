@@ -8,5 +8,6 @@ struct client_data {
 };
 
 struct client_data *client_create(struct context *, const char *name);
+void client_print(struct client_data *, int pad);
 
 #endif /* CLIENT_H_ */

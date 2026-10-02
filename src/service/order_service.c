@@ -30,12 +30,12 @@ struct order_service *order_service_create(struct context *ctx)
     return svc;
 }
 
-void order_service_set_delivery(struct order_service *s, int id, struct delivery_method *dm)
+void order_service_set_delivery(struct order_service *s, int id, struct order_kind *kind)
 {
     struct order *order = order_service_find(s, id);
     if (!order) return;
 
-    order_set_delivery_method(order, dm);
+    order_set_order_kind(order, kind);
 }
 
 void order_service_assign_courier(struct order_service *s, int id, const char *name, int notes)

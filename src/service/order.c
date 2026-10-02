@@ -11,30 +11,31 @@ struct order_item {
     float price;
 };
 
-struct order {
-    int order_id;
-    enum order_status status;
-
-    struct delivery_method *delivery_method;
+struct order_info {
+    int id;
     struct client_data *client;
-
     struct order_item *items;
     size_t items_count;
     size_t items_cap;
-
     time_t created_at;
     time_t estimated_at;
-
     struct destination_address *dest_addr;
+};
+
+struct order {
+    struct order_info info;
+    struct order_kind *kind;
+    enum order_status status;
+    struct courier *courier;
 };
 
 struct order *order_create(struct context *ctx, int id, struct client_data *client)
 {
     struct order *o = context_alloc(ctx, sizeof *o);
-    o->order_id = id;
-    o->client = client;
-    o->delivery_method = dummy_delivery_method_create(ctx);
-    time(&o->created_at);
+    o->info.id = id;
+    o->info.client = client;
+    o->kind = order_kind_dummy_create(ctx);
+    time(&o->info.created_at);
     return o;
 }
 
@@ -50,31 +51,32 @@ static const char *order_status_as_cstr(enum order_status status)
     assert(0 && "unreachable");
 }
 
-void order_add_item(struct order *o, const char *name, int q, float price)
+void order_add_item(struct order *order, const char *name, int q, float price)
 {
-    struct context *c = context_from_alloc(o);
+    struct context *c = context_from_alloc(order);
     struct order_item item;
+    struct order_info *info = &order->info;
 
-    if (o->items_count >= o->items_cap) {
+    if (info->items_count >= info->items_cap) {
         void *new_items;
-        if (o->items_cap) o->items_cap *= 2;
-        else o->items_cap = 1;
-        new_items = context_alloc(c, sizeof *o->items * o->items_cap);
-        memcpy(new_items, o->items, sizeof *o->items * o->items_count);
-        context_free(o->items);
-        o->items = new_items;
+        if (info->items_cap) info->items_cap *= 2;
+        else info->items_cap = 1;
+        new_items = context_alloc(c, sizeof *info->items * info->items_cap);
+        memcpy(new_items, info->items, sizeof *info->items * info->items_count);
+        context_free(info->items);
+        info->items = new_items;
     }
 
     item.name = name;
     item.quantity = q;
     item.price = price;
 
-    o->items[o->items_count++] = item;
+    info->items[info->items_count++] = item;
 }
 
-static void print_order_item(struct order_item const *item)
+static void print_order_item(struct order_item const *item, int pad)
 {
-    printf("%d amount of %s, %f each\n", item->quantity, item->name, item->price);
+    printf("%*s%d amount of %s, %f each\n", pad, "", item->quantity, item->name, item->price);
 }
 
 void order_print(const struct order *o)
@@ -82,49 +84,56 @@ void order_print(const struct order *o)
     size_t i;
     const char *time;
 
-    printf("Id: %d\n", o->order_id);
+    printf("Id: %d\n", o->info.id);
     printf("Status: %s\n", order_status_as_cstr(o->status));
-    printf("Delivery method: %s\n", o->delivery_method->vptr->name);
-    time = ctime(&o->created_at);
+    o->kind->vptr->print(o->kind);
+    time = ctime(&o->info.created_at);
     printf("Created at: %.*s\n", (int)strlen(time)-1, time);
-    time = ctime(&o->estimated_at);
+    time = ctime(&o->info.estimated_at);
     printf("Estimated at: %.*s\n", (int)strlen(time)-1, time);
     /* TODO: print_destination_address(o->dest_addr); */
+    printf("Client:\n");
+    client_print(o->info.client, 4);
     printf("Ordered items:\n");
-    for (i = 0; i < o->items_count; ++i) {
-        print_order_item(&o->items[i]);
+    for (i = 0; i < o->info.items_count; ++i) {
+        print_order_item(&o->info.items[i], 4);
     }
 }
 
-void order_set_delivery_method(struct order *o, struct delivery_method *dm)
+void order_set_kind(struct order *o, struct order_kind *kind)
 {
-    o->delivery_method = dm;
+    o->kind = kind;
 }
 
 int order_assign_courier(struct order *o, struct courier *c)
 {
-    return o->delivery_method->vptr->assign_courier(o->delivery_method, c);
+    if (!o->kind->vptr->needs_courier(o)) return 0;
+    o->courier = c;
+    return 1;
 }
 
 int order_change_status(struct order *o, enum order_status new_status)
 {
-    struct allowed_order_status_transition const *aost;
-    aost = o->delivery_method->vptr->order_status_transition_table;
-    for (; (int)aost->from != -1; aost++) {
-        if (aost->from != o->status) continue;
-        if (aost->to != new_status)  continue;
-        o->status = new_status;
-        return 1;
-    }
-    return 0;
+    return o->kind->vptr->change_status(o->kind, new_status);
 }
 
 size_t order_items_count(const struct order *o)
 {
-    return o->items_count;
+    return o->info.items_count;
 }
 
 int order_get_id(struct order const *o)
 {
-    return o->order_id;
+    return o->info.id;
+}
+
+const struct order_kind *order_get_order_kind(const struct order *order)
+{
+    return order->kind;
+}
+
+void order_set_order_kind(struct order *order, struct order_kind *kind)
+{
+    context_free(order->kind);
+    order->kind = kind;
 }
