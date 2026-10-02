@@ -49,11 +49,12 @@ static float exp_calc_estim(struct delivery_method *dm, struct order *o)
     return 12;
 }
 
-
+/* TODO: send the reason to the caller */
 static int exp_assign_courier(struct delivery_method *m, struct courier *c)
 {
     struct standard_delivery_method *s = (void *)m;
     if (s->courier) return 0;
+    if (!courier_has_car(c)) return 0;
     s->courier = c;
     return 1;
 }

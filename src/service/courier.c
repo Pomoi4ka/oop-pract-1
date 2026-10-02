@@ -12,3 +12,8 @@ struct courier *courier_create(struct context *ctx, const char *name, int notes)
     c->notes = notes;
     return c;
 }
+
+int courier_has_car(struct courier *c)
+{
+    return !!(c->notes & COURIER_NOTES_HAS_CAR);
+}
