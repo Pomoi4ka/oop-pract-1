@@ -86,12 +86,24 @@ struct context *context_from_alloc(void *p)
 
 void context_free(void *p)
 {
-    struct context_alloc_hdr *h = context__get_alloc_header(p);
-    struct context *c = h->parent;
+    struct context_alloc_hdr *h;
+    struct context *c;
+
+    if (!p) return;
+
+    h = context__get_alloc_header(p);
+    c = h->parent;
 
     if (h->next) h->next->prev = h->prev;
     if (h->prev) h->prev->next = h->next;
     if (c->allocations == h) c->allocations = h->next;
 
     free(h);
+}
+
+char *context_strcpy(struct context *c, const char *cstr)
+{
+    char *copy = context_alloc(c, strlen(cstr) + 1);
+    strcpy(copy, cstr);
+    return copy;
 }

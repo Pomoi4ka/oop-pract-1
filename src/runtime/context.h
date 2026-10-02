@@ -15,6 +15,7 @@ void context_enter(void (*)(struct context *));
 void context_quit(struct context *c);
 int context_quitting(struct context *c);
 void *context_alloc(struct context *c, size_t size);
+char *context_strcpy(struct context *c, const char *);
 void context_free(void *);
 struct context *context_from_alloc(void *);
 

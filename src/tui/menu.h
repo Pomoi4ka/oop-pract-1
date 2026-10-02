@@ -20,6 +20,9 @@ struct menu_state {
 struct menu *menu_create(struct context *);
 void menu_input(struct menu *m);
 void menu_set_state(struct menu *m, struct menu_state *);
+void *menu_get_userdata(struct menu *m);
+void menu_set_userdata(struct menu *m, void *);
+const char *menu_prompt(struct menu *m, const char *prompt);
 
 const char *menu_get_input(struct menu *m);
 

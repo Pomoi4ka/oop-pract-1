@@ -23,7 +23,9 @@ struct allowed_order_status_transition {
 struct order;
 
 struct order *order_create(struct context *, int id, struct client_data *);
+int order_get_id(struct order const *);
 void order_print(const struct order *);
+void order_add_item(struct order *o, const char *name, int q, float price);
 size_t order_items_count(const struct order *);
 void order_set_delivery_method(struct order *, struct delivery_method *dm);
 int order_assign_courier(struct order *, struct courier *);

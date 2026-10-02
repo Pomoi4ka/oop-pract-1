@@ -33,7 +33,9 @@ struct order *order_create(struct context *ctx, int id, struct client_data *clie
     struct order *o = context_alloc(ctx, sizeof *o);
     o->order_id = id;
     o->client = client;
-    return 0;
+    o->delivery_method = dummy_delivery_method_create(ctx);
+    time(&o->created_at);
+    return o;
 }
 
 static const char *order_status_as_cstr(enum order_status status)
@@ -46,6 +48,28 @@ static const char *order_status_as_cstr(enum order_status status)
     case ORDER_STATUS_PICKED:           return "Picked";
     }
     assert(0 && "unreachable");
+}
+
+void order_add_item(struct order *o, const char *name, int q, float price)
+{
+    struct context *c = context_from_alloc(o);
+    struct order_item item;
+
+    if (o->items_count >= o->items_cap) {
+        void *new_items;
+        if (o->items_cap) o->items_cap *= 2;
+        else o->items_cap = 1;
+        new_items = context_alloc(c, sizeof *o->items * o->items_cap);
+        memcpy(new_items, o->items, sizeof *o->items * o->items_count);
+        context_free(o->items);
+        o->items = new_items;
+    }
+
+    item.name = name;
+    item.quantity = q;
+    item.price = price;
+
+    o->items[o->items_count++] = item;
 }
 
 static void print_order_item(struct order_item const *item)
@@ -74,7 +98,6 @@ void order_print(const struct order *o)
 
 void order_set_delivery_method(struct order *o, struct delivery_method *dm)
 {
-    assert(o->delivery_method == NULL);
     o->delivery_method = dm;
 }
 
@@ -99,4 +122,9 @@ int order_change_status(struct order *o, enum order_status new_status)
 size_t order_items_count(const struct order *o)
 {
     return o->items_count;
+}
+
+int order_get_id(struct order const *o)
+{
+    return o->order_id;
 }

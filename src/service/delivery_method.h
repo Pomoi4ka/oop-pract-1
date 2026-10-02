@@ -20,5 +20,7 @@ struct delivery_method {
 };
 
 struct delivery_method *standard_delivery_method_create(struct context *ctx);
+struct delivery_method *express_delivery_method_create(struct context *ctx);
+struct delivery_method *dummy_delivery_method_create(struct context *ctx);
 
 #endif /* DELIVERY_METHOD_H_ */

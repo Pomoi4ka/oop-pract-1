@@ -31,8 +31,8 @@ struct delivery_method *express_delivery_method_create(struct context *ctx)
     struct standard_delivery_method *s;
     s = context_alloc(ctx, sizeof *s);
     s->base.vptr = &vtable;
-    s->base_price = 300.0f;
-    s->per_item = 50.0f;
+    s->base_price = 500.0f;
+    s->per_item = 70.0f;
     return &s->base;
 }
 
@@ -46,7 +46,7 @@ static float exp_calc_estim(struct delivery_method *dm, struct order *o)
 {
     (void) dm;
     (void) o;
-    return 24;
+    return 12;
 }
 
 
