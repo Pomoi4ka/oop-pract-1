@@ -70,11 +70,24 @@ static void done(struct menu *m)
 {
     struct menu_client_creation *state = (void*)menu_get_state(m);
     struct order_service *svc = menu_get_userdata(m);
-    if (!state->data->name) {
+    if (!state->data->name || !*state->data->name) {
         fprintf(stderr, "* cancelled *: client name is empty\n");
-        context_free(state->data);
-    } else if (order_service_register_client(svc, state->data)) {
+        goto cleanup;
+    }
+
+    if (!client_validate_email(state->data->email)) {
+        fprintf(stderr, "error: invalid email\n");
+        return;
+    }
+
+    if (!client_validate_phone(state->data->phone)) {
+        fprintf(stderr, "error: invalid phone\n");
+        return;
+    }
+
+    if (order_service_register_client(svc, state->data)) {
         fprintf(stderr, "error: such client already in the registry\n");
+    cleanup:
         context_free(state->data);
     }
     menu_pop_state(m);

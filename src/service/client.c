@@ -30,3 +30,27 @@ unsigned client_hasheq(enum hasheq_op op, const void *pa, const void *pb)
     }
     return -1;
 }
+
+int client_validate_phone(const char *phone)
+{
+    size_t n = 0, digits = 0;
+    if (!phone) return 0;
+    for (; *phone; ++phone, ++n) {
+        if (*phone >= '0' && *phone <= '9') { ++digits; continue; }
+        if (strchr("+- ()", *phone)) continue;
+        return 0;
+    }
+    return n > 0 && digits >= 5;
+}
+
+int client_validate_email(const char *email)
+{
+    const char *at, *dot;
+    if (!email || !*email) return 0;
+    at = strchr(email, '@');
+    if (!at || at == email) return 0;
+    if (strchr(at + 1, '@')) return 0;
+    dot = strrchr(at + 1, '.');
+    if (!dot || dot == at + 1 || !dot[1]) return 0;
+    return 1;
+}
