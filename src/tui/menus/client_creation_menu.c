@@ -1,6 +1,6 @@
-#include "menus.h"
-#include "../service/client.h"
-#include "../service/order_service.h"
+#include "../menus.h"
+#include "../../service/client.h"
+#include "../../service/order_service.h"
 
 #include <stdio.h>
 

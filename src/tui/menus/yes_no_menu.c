@@ -1,4 +1,4 @@
-#include "menu.h"
+#include "../menu.h"
 
 struct menu_yes_no {
     struct menu_state base;
