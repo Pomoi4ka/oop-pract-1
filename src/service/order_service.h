@@ -9,7 +9,8 @@ enum order_service_error {
     OSE_NO_SUCH_ORDER_WITH_ID,
     OSE_COURIER_IS_NOT_SET_YET,
     OSE_INVALID_NEW_STATUS,
-    OSE_KIND_DOES_NOT_NEED_COURIER
+    OSE_KIND_DOES_NOT_NEED_COURIER,
+    OSE_KIND_FROZEN
 };
 
 struct order_service *order_service_create(struct context *ctx);

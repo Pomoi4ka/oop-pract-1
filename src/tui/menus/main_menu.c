@@ -132,6 +132,10 @@ static void manage(struct menu *m)
         print_order_service_error(order_service_get_error(s));
         return;
     }
+    if (!order_can_change_kind(o)) {
+        fprintf(stderr, "error: order kind is frozen after packing started\n");
+        return;
+    }
     menu_push_state(m, manage_menu_create(ctx, id));
 }
 

@@ -1,4 +1,5 @@
 #include "../menus.h"
+#include "../errors.h"
 #include "../../service/order_service.h"
 
 #include <stdio.h>
@@ -29,6 +30,13 @@ static void finish(struct menu *m, order_kind *k)
     svc = (struct order_service *)menu_get_userdata(m);
 
     order_service_set_kind(svc, s->order_id, k);
+    if (order_service_get_error(svc) != OSE_NONE) {
+        print_order_service_error(order_service_get_error(svc));
+        menu_pop_state(m);
+        context_free(s);
+        return;
+    }
+
     o = order_service_find(svc, s->order_id);
     if (o) {
         printf("Delivery: %s\n", k->name);

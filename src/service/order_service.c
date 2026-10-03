@@ -78,6 +78,10 @@ void order_service_set_kind(struct order_service *s, int id, order_kind *kind)
     struct order *order = order_service_find(s, id);
     if (!order) return;
 
+    if (!order_can_change_kind(order)) {
+        s->err = OSE_KIND_FROZEN;
+        return;
+    }
     order_set_order_kind(order, kind);
 }
 

@@ -33,6 +33,7 @@ courier *order_get_courier(const struct order *);
 double order_calc_cost(const struct order *);
 double order_calc_eta_hours(const struct order *);
 int order_can_change_status(const struct order *, enum order_status);
+int order_can_change_kind(const struct order *);
 const char *order_status_as_cstr(enum order_status);
 
 #endif /* ORDER_H_ */

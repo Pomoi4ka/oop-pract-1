@@ -24,5 +24,8 @@ void print_order_service_error(enum order_service_error err)
     case OSE_KIND_DOES_NOT_NEED_COURIER:
         fprintf(stderr, "this order kind does not need a courier\n");
         break;
+    case OSE_KIND_FROZEN:
+        fprintf(stderr, "order kind is frozen after packing started\n");
+        break;
     }
 }

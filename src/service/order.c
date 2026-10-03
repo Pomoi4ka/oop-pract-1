@@ -140,11 +140,6 @@ int order_get_id(struct order const *o)
     return o->info.id;
 }
 
-void order_set_order_kind(struct order *order, order_kind *kind)
-{
-    order->kind = kind;
-}
-
 enum order_status order_get_status(const struct order *order)
 {
     return order->status;
@@ -168,4 +163,16 @@ double order_calc_eta_hours(const struct order *o)
 int order_can_change_status(const struct order *o, enum order_status to)
 {
     return o->kind->vptr->allows_transition(o->kind, o, to) == OSTR_SUCCESS;
+}
+
+int order_can_change_kind(const struct order *o)
+{
+    return o->status == ORDER_STATUS_PACKING;
+}
+
+void order_set_order_kind(struct order *o, order_kind *kind)
+{
+    o->kind = kind;
+    if (o->courier && !kind->vptr->needs_courier(kind, o))
+        o->courier = NULL;
 }
