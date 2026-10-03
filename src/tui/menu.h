@@ -17,6 +17,8 @@ struct menu_state {
     const struct menu_command *commands;
 };
 
+typedef void (*menu_action)(struct menu *, void *);
+
 struct menu *menu_create(struct context *);
 void menu_input(struct menu *m);
 void menu_push_state(struct menu *m, struct menu_state *);

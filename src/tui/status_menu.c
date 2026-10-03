@@ -22,7 +22,7 @@ static const struct status_entry {
 struct menu_status {
     struct menu_state base;
     int order_id;
-    struct menu_command cmds[STATUS_TABLE_N + 1];
+    struct menu_command cmds[STATUS_TABLE_N + 2];
 };
 
 static void change_status(struct menu *m)
@@ -53,6 +53,13 @@ static void change_status(struct menu *m)
     context_free(s);
 }
 
+static void cancel(struct menu *m)
+{
+    struct menu_status *s = (struct menu_status *)menu_get_state(m);
+    menu_pop_state(m);
+    context_free(s);
+}
+
 struct menu_state *status_menu_create(struct context *ctx, int order_id, struct order *o)
 {
     struct menu_status *s;
@@ -68,6 +75,10 @@ struct menu_state *status_menu_create(struct context *ctx, int order_id, struct 
         s->cmds[n].run         = change_status;
         ++n;
     }
+    s->cmds[n].command     = "cancel";
+    s->cmds[n].description = "cancel and return";
+    s->cmds[n].run         = cancel;
+    ++n;
     s->cmds[n].command     = NULL;
     s->cmds[n].description = NULL;
     s->cmds[n].run         = NULL;
