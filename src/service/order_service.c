@@ -23,6 +23,7 @@ struct order_service {
     /* Singletons */
     order_kind *standard;
     order_kind *express;
+    order_kind *pickup;
 
     struct order **orders;
     size_t count, cap;
@@ -62,11 +63,12 @@ struct order_service *order_service_create(struct context *ctx)
     svc = context_alloc(ctx, sizeof *svc);
     svc->ctx = ctx;
     /* this is stupid, but the data should not move, so its kinda makes sense */
-    svc->client_registry.map = hashmap_create(ctx, client_hasheq, sizeof(client_data*));
+    svc->client_registry.map  = hashmap_create(ctx, client_hasheq,  sizeof(client_data*));
     svc->courier_registry.map = hashmap_create(ctx, courier_hasheq, sizeof(courier*));
     svc->standard = order_kind_standard_create(ctx);
-    svc->express = order_kind_express_create(ctx);
-    svc->next_id = 1;
+    svc->express  = order_kind_express_create(ctx);
+    svc->pickup   = order_kind_pickup_create(ctx);
+    svc->next_id  = 1;
     return svc;
 }
 
@@ -105,6 +107,13 @@ void order_service_change_status(struct order_service *s, int id, enum order_sta
         s->err = OSE_INVALID_NEW_STATUS;
         break;
     }
+}
+
+void order_service_add_item(struct order_service *s, int id, const char *name, int qty, float price)
+{
+    struct order *o = order_service_find(s, id);
+    if (!o) return;
+    order_add_item(o, name, qty, price);
 }
 
 void order_service_add_order(struct order_service *s, struct order *order)
@@ -175,4 +184,9 @@ order_kind *order_service_get_standard_kind(struct order_service *s)
 order_kind *order_service_get_express_kind(struct order_service *s)
 {
     return s->express;
+}
+
+order_kind *order_service_get_pickup_kind(struct order_service *s)
+{
+    return s->pickup;
 }

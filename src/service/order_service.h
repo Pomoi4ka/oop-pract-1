@@ -20,9 +20,11 @@ void order_service_list(struct order_service *s);
 void order_service_set_kind(struct order_service *s, int id, order_kind *);
 void order_service_assign_courier(struct order_service *s, int id, const char *name, int notes);
 void order_service_change_status(struct order_service *s, int id, enum order_status st);
+void order_service_add_item(struct order_service *s, int id, const char *name, int qty, float price);
 enum order_service_error order_service_get_error(struct order_service *s);
 
 order_kind *order_service_get_standard_kind(struct order_service *s);
 order_kind *order_service_get_express_kind(struct order_service *s);
+order_kind *order_service_get_pickup_kind(struct order_service *s);
 
 #endif /* ORDER_SERVICE_H_ */

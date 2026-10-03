@@ -10,10 +10,12 @@ struct menu_manage {
 
 static void pick_standard(struct menu *);
 static void pick_express(struct menu *);
+static void pick_pickup(struct menu *);
 
 static const struct menu_command commands[] = {
     {"standard", "standard delivery", pick_standard},
     {"express",  "express delivery",  pick_express},
+    {"pickup",   "self pickup",       pick_pickup},
     {NULL, NULL, NULL}
 };
 
@@ -50,6 +52,13 @@ static void pick_express(struct menu *m)
     struct order_service *svc;
     svc = (struct order_service *)menu_get_userdata(m);
     finish(m, order_service_get_express_kind(svc));
+}
+
+static void pick_pickup(struct menu *m)
+{
+    struct order_service *svc;
+    svc = (struct order_service *)menu_get_userdata(m);
+    finish(m, order_service_get_pickup_kind(svc));
 }
 
 struct menu_state *manage_menu_create(struct context *ctx, int order_id)

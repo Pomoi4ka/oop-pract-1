@@ -7,16 +7,18 @@
 
 static void new_order(struct menu *);
 static void list_orders(struct menu *);
+static void add_items(struct menu *);
 static void manage(struct menu *);
 static void assign(struct menu *);
 static void status(struct menu *);
 
 static const struct menu_command commands[] = {
-    {"new_order",   "create a new order",                              new_order},
-    {"list_orders", "list the existing orders",                        list_orders},
-    {"manage",      "choose delivery kind, show cost and ETA",         manage},
-    {"assign",      "assign courier to the order",                     assign},
-    {"status",      "change order status and show current info",       status},
+    {"new_order",   "create a new order",                          new_order},
+    {"list_orders", "list the existing orders",                    list_orders},
+    {"items",       "add items to an order",                       add_items},
+    {"manage",      "choose delivery kind, show cost and ETA",     manage},
+    {"assign",      "assign courier to the order",                 assign},
+    {"status",      "change order status and show current info",   status},
     {NULL, NULL, NULL}
 };
 
@@ -63,6 +65,27 @@ static void list_orders(struct menu *m)
     struct order_service *s;
     s = (struct order_service *)menu_get_userdata(m);
     order_service_list(s);
+}
+
+static void add_items(struct menu *m)
+{
+    struct context *ctx;
+    struct order_service *s;
+    const char *id_str;
+    struct order *o;
+    int id;
+
+    ctx = context_from_alloc(m);
+    s = (struct order_service *)menu_get_userdata(m);
+
+    id_str = menu_prompt(m, "order id: ");
+    id = atoi(id_str);
+    o = order_service_find(s, id);
+    if (!o) {
+        print_order_service_error(order_service_get_error(s));
+        return;
+    }
+    menu_push_state(m, items_menu_create(ctx, id));
 }
 
 static void manage(struct menu *m)

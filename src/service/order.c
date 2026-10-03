@@ -18,7 +18,6 @@ struct order_info {
     size_t items_count;
     size_t items_cap;
     time_t created_at;
-    time_t estimated_at;
     destination_address *dest_addr;
 };
 
@@ -90,8 +89,8 @@ void order_print(const struct order *o)
     printf("Delivery type: %s\n", o->kind->name);
     time = ctime(&o->info.created_at);
     printf("Created at: %.*s\n", (int)strlen(time)-1, time);
-    time = ctime(&o->info.estimated_at);
-    printf("Estimated at: %.*s\n", (int)strlen(time)-1, time);
+    printf("ETA: %.0f h\n", order_calc_eta_hours(o));
+    printf("Cost: %.2f\n", order_calc_cost(o));
     printf("Client:\n");
     client_print(o->info.client, 4);
     printf("Ordered items:\n");

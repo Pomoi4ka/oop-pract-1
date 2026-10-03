@@ -39,5 +39,6 @@ struct order_kind {
 
 order_kind *order_kind_standard_create(struct context *ctx);
 order_kind *order_kind_express_create(struct context *ctx);
+order_kind *order_kind_pickup_create(struct context *ctx);
 
 #endif /* ORDER_KIND_H_ */
