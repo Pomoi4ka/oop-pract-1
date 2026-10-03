@@ -45,7 +45,7 @@ static void *hashmap_slot_at(struct hashmap *base, unsigned index)
 static unsigned int hashmap_keyindex(struct hashmap *base, const void *key, int find_insert_slot)
 {
     unsigned int keyhash = base->hasheq(HASHEQ_HASH, key, NULL);
-    size_t limit = 4*base->cap/3;
+    size_t limit = 3*base->cap/4;
     size_t i;
 
     for (i = 0; i < limit; ++i) {
