@@ -91,6 +91,7 @@ void hashmap_resize(struct hashmap *base)
 
     base->items = context_alloc(ctx, base->cap * base->itemsize);
     base->bitmap = context_alloc(ctx, (base->cap + 7)>>3);
+    base->count = 0;
 
     for (i = 0; i < cap; ++i) {
         if (!(bitmap[i>>3]&(1<<(i&7)))) continue;
@@ -135,7 +136,7 @@ size_t hashmap_get_count(struct hashmap *base)
 unsigned fnv1(const void *bytes, size_t n)
 {
     unsigned fp = 16777619;
-    unsigned hash = fp;
+    unsigned hash = 2166136261;
     const char *b = bytes;
     const char *end = b + n;
 
