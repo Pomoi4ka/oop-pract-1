@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 #include "../hashmap.h"
 
@@ -164,6 +165,7 @@ void order_service_list(struct order_service *s)
 {
     size_t i;
     for (i = 0; i < s->count; ++i) {
+        if (i) printf("--------------------\n");
         order_print(s->orders[i]);
     }
 }
