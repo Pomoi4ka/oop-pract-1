@@ -27,7 +27,7 @@ static void finish(struct menu *m, order_kind *k)
     struct order *o;
 
     s = (struct menu_manage *)menu_get_state(m);
-    svc = (struct order_service *)menu_get_userdata(m);
+    svc = menu_get_userdata(m);
 
     order_service_set_kind(svc, s->order_id, k);
     if (order_service_get_error(svc) != OSE_NONE) {
@@ -51,21 +51,21 @@ static void finish(struct menu *m, order_kind *k)
 static void pick_standard(struct menu *m)
 {
     struct order_service *svc;
-    svc = (struct order_service *)menu_get_userdata(m);
+    svc = menu_get_userdata(m);
     finish(m, order_service_get_standard_kind(svc));
 }
 
 static void pick_express(struct menu *m)
 {
     struct order_service *svc;
-    svc = (struct order_service *)menu_get_userdata(m);
+    svc = menu_get_userdata(m);
     finish(m, order_service_get_express_kind(svc));
 }
 
 static void pick_pickup(struct menu *m)
 {
     struct order_service *svc;
-    svc = (struct order_service *)menu_get_userdata(m);
+    svc = menu_get_userdata(m);
     finish(m, order_service_get_pickup_kind(svc));
 }
 
