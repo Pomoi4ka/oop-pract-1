@@ -20,7 +20,7 @@ static const struct menu_command commands[] = {
     {"name", "set client name", name},
     {"email", "set client email", email},
     {"phone", "set client phone", phone},
-    {"done", "finish user creation", done},
+    {"done", "finish client creation", done},
     {NULL, NULL, NULL}
 };
 
@@ -70,7 +70,10 @@ static void done(struct menu *m)
 {
     struct menu_client_creation *state = (void*)menu_get_state(m);
     struct order_service *svc = menu_get_userdata(m);
-    if (order_service_register_client(svc, state->data)) {
+    if (!state->data->name) {
+        fprintf(stderr, "* cancelled *: client name is empty\n");
+        context_free(state->data);
+    } else if (order_service_register_client(svc, state->data)) {
         fprintf(stderr, "error: such client already in the registry\n");
         context_free(state->data);
     }
