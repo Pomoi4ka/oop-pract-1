@@ -8,7 +8,8 @@ enum order_service_error {
     OSE_USER_DOESNOT_EXISTS,
     OSE_NO_SUCH_ORDER_WITH_ID,
     OSE_COURIER_IS_NOT_SET_YET,
-    OSE_INVALID_NEW_STATUS
+    OSE_INVALID_NEW_STATUS,
+    OSE_KIND_DOES_NOT_NEED_COURIER
 };
 
 struct order_service *order_service_create(struct context *ctx);
@@ -20,5 +21,8 @@ void order_service_set_kind(struct order_service *s, int id, order_kind *);
 void order_service_assign_courier(struct order_service *s, int id, const char *name, int notes);
 void order_service_change_status(struct order_service *s, int id, enum order_status st);
 enum order_service_error order_service_get_error(struct order_service *s);
+
+order_kind *order_service_get_standard_kind(struct order_service *s);
+order_kind *order_service_get_express_kind(struct order_service *s);
 
 #endif /* ORDER_SERVICE_H_ */

@@ -30,4 +30,9 @@ size_t order_get_items_count(const struct order *);
 enum order_status order_get_status(const struct order *);
 courier *order_get_courier(const struct order *);
 
+double order_calc_cost(const struct order *);
+double order_calc_eta_hours(const struct order *);
+int order_can_change_status(const struct order *, enum order_status);
+const char *order_status_as_cstr(enum order_status);
+
 #endif /* ORDER_H_ */

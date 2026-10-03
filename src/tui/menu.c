@@ -57,24 +57,23 @@ static void menu__dispatch(struct menu *m)
     if (menu__match_command(m, common_commands)) return;
 }
 
-static void menu__collect_input(struct menu *m)
+static void menu__collect_input(struct menu *m, const char *prompt)
 {
     free(m->input);
-    m->input = readline("> ");
+    m->input = readline(prompt);
     if (!m->input) menu__quit(m);
 }
 
 const char *menu_prompt(struct menu *m, const char *prompt)
 {
-    printf("%s", prompt);
-    menu__collect_input(m);
+    menu__collect_input(m, prompt);
     return m->input;
 }
 
 void menu_input(struct menu *m)
 {
     menu__on_unmatched_command(m);
-    menu__collect_input(m);
+    menu__collect_input(m, "> ");
     menu__dispatch(m);
 }
 
@@ -124,6 +123,11 @@ void menu_push_state(struct menu *m, struct menu_state *state)
 void *menu_get_userdata(struct menu *m)
 {
     return m->userdata;
+}
+
+const char *menu_get_input(struct menu *m)
+{
+    return m->input;
 }
 
 void menu_set_userdata(struct menu *m, void *userdata)

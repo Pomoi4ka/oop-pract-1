@@ -37,11 +37,10 @@ static float std_calc_cost(order_kind *kind, struct order *o)
 
 static float std_calc_estimated_time(order_kind *kind, struct order *o)
 {
-    (void) o;
-    (void) kind;
+    (void)o;
+    (void)kind;
     return 24;
 }
-
 
 static int std_needs_courier(order_kind *kind, struct order *o)
 {
@@ -50,10 +49,32 @@ static int std_needs_courier(order_kind *kind, struct order *o)
     return 1;
 }
 
-static enum order_status_transition_result std_allows_transition(order_kind *kind, struct order *order, enum order_status status)
+static enum order_status_transition_result
+std_allows_transition(order_kind *kind, struct order *order, enum order_status to)
 {
-    (void) kind;
-    (void) order;
-    (void) status;
-    assert(0);
+    static const struct allowed_order_status_transition table[] = {
+        {ORDER_STATUS_PACKING, ORDER_STATUS_ON_THE_WAY},
+        {ORDER_STATUS_ON_THE_WAY, ORDER_STATUS_DELIVERED},
+        {-1, -1}
+    };
+
+    struct allowed_order_status_transition const *tp;
+    enum order_status from;
+
+    (void)kind;
+
+    tp = table;
+    from = order_get_status(order);
+
+    for (; (int)tp->from != -1; ++tp) {
+        if (tp->from != from) continue;
+        if (tp->to != to) continue;
+
+        if (from == ORDER_STATUS_PACKING) {
+            if (!order_get_courier(order)) return OSTR_COURIER_IS_NOT_SET_YET;
+        }
+
+        return OSTR_SUCCESS;
+    }
+    return OSTR_INVALID_NEW_STATUS_FOR_THIS_KIND_OF_ORDER;
 }

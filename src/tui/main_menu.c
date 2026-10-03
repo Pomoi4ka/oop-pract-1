@@ -1,18 +1,22 @@
 #include "menus.h"
+#include "errors.h"
 #include "../service/order_service.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 
 static void new_order(struct menu *);
 static void list_orders(struct menu *);
-static void nothing() {}
+static void manage(struct menu *);
+static void assign(struct menu *);
+static void status(struct menu *);
 
 static const struct menu_command commands[] = {
-    {"new_order",   "create a new order",       new_order},
-    {"list_orders", "list the existing orders", list_orders},
-    {"manage",      "manage order delivery type, show price and date", nothing},
-    {"assign",      "assign courier to the order", nothing},
-    {"status",      "change order status and show current info", nothing},
+    {"new_order",   "create a new order",                              new_order},
+    {"list_orders", "list the existing orders",                        list_orders},
+    {"manage",      "choose delivery kind, show cost and ETA",         manage},
+    {"assign",      "assign courier to the order",                     assign},
+    {"status",      "change order status and show current info",       status},
     {NULL, NULL, NULL}
 };
 
@@ -24,30 +28,20 @@ struct menu_state *main_menu_create(struct context *ctx)
     return s;
 }
 
-static void print_order_service_error(enum order_service_error err)
-{
-    fprintf(stderr, "error: service errored: ");
-    switch (err) {
-    case OSE_NONE: fprintf(stderr, "no error\n"); break;
-    case OSE_USER_DOESNOT_EXISTS: fprintf(stderr, "user does not exists\n"); break;
-    case OSE_NO_SUCH_ORDER_WITH_ID: fprintf(stderr, "no such order with the id\n"); break;
-    case OSE_COURIER_IS_NOT_SET_YET: fprintf(stderr, "courier is not set yet\n"); break;
-    case OSE_INVALID_NEW_STATUS: fprintf(stderr, "invalid new status\n"); break;
-    }
-}
-
 static void new_order(struct menu *m)
 {
-    struct context *ctx = context_from_alloc(m);
-    struct order_service *s = menu_get_userdata(m);
+    struct context *ctx;
+    struct order_service *s;
     struct order *order;
     const char *client_name;
     destination_address *dest;
     enum order_service_error err;
     struct menu_state *question;
 
-    /* TODO: more complex prompts for creating a user and the address */
-    client_name = menu_prompt(m, "client name");
+    ctx = context_from_alloc(m);
+    s = (struct order_service *)menu_get_userdata(m);
+
+    client_name = menu_prompt(m, "client name: ");
     dest        = destination_address_create(ctx, "TODO-City", "TODO-Street", "TODO-building", NULL, NULL);
 
     order = order_service_create_order(s, client_name, dest);
@@ -66,6 +60,75 @@ static void new_order(struct menu *m)
 
 static void list_orders(struct menu *m)
 {
-    struct order_service *s = menu_get_userdata(m);
+    struct order_service *s;
+    s = (struct order_service *)menu_get_userdata(m);
     order_service_list(s);
+}
+
+static void manage(struct menu *m)
+{
+    struct context *ctx;
+    struct order_service *s;
+    const char *id_str;
+    struct order *o;
+    int id;
+
+    ctx = context_from_alloc(m);
+    s = (struct order_service *)menu_get_userdata(m);
+
+    id_str = menu_prompt(m, "order id: ");
+    id = atoi(id_str);
+    o = order_service_find(s, id);
+    if (!o) {
+        print_order_service_error(order_service_get_error(s));
+        return;
+    }
+    menu_push_state(m, manage_menu_create(ctx, id));
+}
+
+static void status(struct menu *m)
+{
+    struct context *ctx;
+    struct order_service *s;
+    const char *id_str;
+    struct order *o;
+    int id;
+
+    ctx = context_from_alloc(m);
+    s = (struct order_service *)menu_get_userdata(m);
+
+    id_str = menu_prompt(m, "order id: ");
+    id = atoi(id_str);
+    o = order_service_find(s, id);
+    if (!o) {
+        print_order_service_error(order_service_get_error(s));
+        return;
+    }
+    order_print(o);
+    menu_push_state(m, status_menu_create(ctx, id, o));
+}
+
+static void assign(struct menu *m)
+{
+    struct order_service *s;
+    const char *id_str;
+    char *name;
+    const char *car;
+    int id, notes;
+
+    s = (struct order_service *)menu_get_userdata(m);
+
+    id_str = menu_prompt(m, "order id: ");
+    id = atoi(id_str);
+
+    /* menu_prompt reuses m->input across calls; copy the name */
+    name = context_strdup(context_from_alloc(m), menu_prompt(m, "courier name: "));
+    car  = menu_prompt(m, "has car? (y/n): ");
+
+    notes = COURIER_NOTES_NONE;
+    if (car[0] == 'y' || car[0] == 'Y') notes |= COURIER_NOTES_HAS_CAR;
+
+    order_service_assign_courier(s, id, name, notes);
+    if (order_service_get_error(s) != OSE_NONE)
+        print_order_service_error(order_service_get_error(s));
 }

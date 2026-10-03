@@ -40,7 +40,7 @@ struct order *order_create(struct context *ctx, int id, client_data *client, des
     return o;
 }
 
-static const char *order_status_as_cstr(enum order_status status)
+const char *order_status_as_cstr(enum order_status status)
 {
     switch (status) {
     case ORDER_STATUS_PACKING:          return "Packing";
@@ -154,4 +154,19 @@ enum order_status order_get_status(const struct order *order)
 courier *order_get_courier(const struct order *order)
 {
     return order->courier;
+}
+
+double order_calc_cost(const struct order *o)
+{
+    return (double)o->kind->vptr->calc_cost(o->kind, (struct order *)o);
+}
+
+double order_calc_eta_hours(const struct order *o)
+{
+    return (double)o->kind->vptr->calc_estimated_time(o->kind, (struct order *)o);
+}
+
+int order_can_change_status(const struct order *o, enum order_status to)
+{
+    return o->kind->vptr->allows_transition(o->kind, (struct order *)o, to) == OSTR_SUCCESS;
 }

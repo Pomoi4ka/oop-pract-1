@@ -45,7 +45,7 @@ static void show(struct menu *m)
 static void name(struct menu *m)
 {
     struct menu_client_creation *state = (void*)menu_get_state(m);
-    const char *value = menu_prompt(m, "name");
+    const char *value = menu_prompt(m, "name: ");
     context_free((void*)state->data->name);
     state->data->name = context_strdup(context_from_alloc(m), value);
 }
@@ -53,7 +53,7 @@ static void name(struct menu *m)
 static void email(struct menu *m)
 {
     struct menu_client_creation *state = (void*)menu_get_state(m);
-    const char *value = menu_prompt(m, "email");
+    const char *value = menu_prompt(m, "email: ");
     context_free((void*)state->data->email);
     state->data->email = context_strdup(context_from_alloc(m), value);
 }
@@ -61,7 +61,7 @@ static void email(struct menu *m)
 static void phone(struct menu *m)
 {
     struct menu_client_creation *state = (void*)menu_get_state(m);
-    const char *value = menu_prompt(m, "phone");
+    const char *value = menu_prompt(m, "phone: ");
     context_free((void*)state->data->phone);
     state->data->phone = context_strdup(context_from_alloc(m), value);
 }

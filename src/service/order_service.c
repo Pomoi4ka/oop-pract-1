@@ -48,8 +48,8 @@ struct order *order_service_find(struct order_service *s, int id)
         int c_id;
         mid = lo + (hi - lo)/2;
         c_id = order_get_id(s->orders[mid]);
-        if (c_id > id) lo = mid + 1;
-        else if (c_id < id) hi = mid;
+        if (c_id < id) lo = mid + 1;
+        else if (c_id > id) hi = mid;
         else return s->orders[mid];
     }
     s->err = OSE_NO_SUCH_ORDER_WITH_ID;
@@ -84,10 +84,11 @@ void order_service_assign_courier(struct order_service *s, int id, const char *n
     courier *c;
     if (!order) return;
 
-    /* TODO: couriers registry */
-
     c = courier_create(s->ctx, name, notes);
-    order_assign_courier(order, c);
+    if (!order_assign_courier(order, c)) {
+        s->err = OSE_KIND_DOES_NOT_NEED_COURIER;
+        return;
+    }
 }
 
 void order_service_change_status(struct order_service *s, int id, enum order_status st)
@@ -164,4 +165,14 @@ int order_service_register_client(struct order_service *s, client_data *cd)
     if (d) return 1;
     hashmap_insert(s->client_registry.map, &cd);
     return 0;
+}
+
+order_kind *order_service_get_standard_kind(struct order_service *s)
+{
+    return s->standard;
+}
+
+order_kind *order_service_get_express_kind(struct order_service *s)
+{
+    return s->express;
 }
