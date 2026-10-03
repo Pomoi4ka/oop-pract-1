@@ -29,7 +29,6 @@ struct order_service {
     int next_id;
 
     enum order_service_error err;
-
 };
 
 enum order_service_error order_service_get_error(struct order_service *s)
@@ -39,28 +38,22 @@ enum order_service_error order_service_get_error(struct order_service *s)
 
 struct order *order_service_find(struct order_service *s, int id)
 {
-    struct order *order = NULL;
-    size_t i, lo, hi;
+    size_t mid, lo, hi;
 
+    s->err = OSE_NONE;
     lo = 0;
     hi = s->count;
 
-    while (hi - lo) {
+    while (lo < hi) {
         int c_id;
-        i = lo + (hi - lo)/2;
-        c_id = order_get_id(s->orders[i]);
-        if (c_id > id) lo = i;
-        else if (c_id < id) hi = i-1;
-        else break;
+        mid = lo + (hi - lo)/2;
+        c_id = order_get_id(s->orders[mid]);
+        if (c_id > id) lo = mid + 1;
+        else if (c_id < id) hi = mid;
+        else return s->orders[mid];
     }
-
-    if (order_get_id(s->orders[i]) == id)
-        order = s->orders[i];
-
-    if (!order)
-        s->err = OSE_NO_SUCH_ORDER_WITH_ID;
-
-    return order;
+    s->err = OSE_NO_SUCH_ORDER_WITH_ID;
+    return NULL;
 }
 
 struct order_service *order_service_create(struct context *ctx)
@@ -77,7 +70,7 @@ struct order_service *order_service_create(struct context *ctx)
     return svc;
 }
 
-void order_service_set_delivery(struct order_service *s, int id, struct order_kind *kind)
+void order_service_set_kind(struct order_service *s, int id, order_kind *kind)
 {
     struct order *order = order_service_find(s, id);
     if (!order) return;
@@ -99,13 +92,18 @@ void order_service_assign_courier(struct order_service *s, int id, const char *n
 
 void order_service_change_status(struct order_service *s, int id, enum order_status st)
 {
-    int ret;
     struct order *order = order_service_find(s, id);
     if (!order) return;
 
-    ret = order_change_status(order, st);
-    if (ret) return;
-    s->err = OSE_INVALID_NEW_STATUS;
+    switch (order_change_status(order, st)) {
+    case OSTR_SUCCESS: break;
+    case OSTR_COURIER_IS_NOT_SET_YET:
+        s->err = OSE_COURIER_IS_NOT_SET_YET;
+        break;
+    case OSTR_INVALID_NEW_STATUS_FOR_THIS_KIND_OF_ORDER:
+        s->err = OSE_INVALID_NEW_STATUS;
+        break;
+    }
 }
 
 void order_service_add_order(struct order_service *s, struct order *order)
@@ -125,9 +123,9 @@ void order_service_add_order(struct order_service *s, struct order *order)
 
 client_data *order_service_find_client(struct client_registry *reg, const char *client_name)
 {
+    struct client_data key = {0};
     client_data *const *c;
     struct client_data *pkey;
-    struct client_data key;
     key.name = client_name;
     pkey = &key;
     c = hashmap_get(reg->map, &pkey);

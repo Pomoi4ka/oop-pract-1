@@ -124,10 +124,11 @@ const char *order_status_transition_result_as_cstr(enum order_status_transition_
 
 enum order_status_transition_result order_change_status(struct order *o, enum order_status new_status)
 {
-    if (!o->kind->vptr->allows_transition(o->kind, o, new_status))
-        return 0;
+    enum order_status_transition_result ret;
+    ret = o->kind->vptr->allows_transition(o->kind, o, new_status);
+    if (ret != OSTR_SUCCESS) return ret;
     o->status = new_status;
-    return 1;
+    return OSTR_SUCCESS;
 }
 
 size_t order_get_items_count(const struct order *o)
