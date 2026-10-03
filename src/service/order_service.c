@@ -1,8 +1,26 @@
 #include "order_service.h"
 
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+struct client_registry {
+    int TODO_HASHMAP;
+};
+
+struct order_service {
+    struct context *ctx;
+
+    struct client_registry client_registry;
+
+    order_kind *standard;
+    order_kind *express;
+
+    struct order **orders;
+    size_t count, cap;
+    int next_id;
+};
 
 static int order_compare(const void *pa, const void *pb)
 {
@@ -78,16 +96,22 @@ void order_service_add_order(struct order_service *s, struct order *order)
     s->orders[s->count++] = order;
 }
 
-struct order *order_service_create_order(struct order_service *s, const char *client_name)
+client_data *order_service_find_client(struct client_registry *reg, const char *client_name)
+{
+    (void) reg;
+    (void) client_name;
+   assert(0 && "TODO");
+}
+
+struct order *order_service_create_order(struct order_service *s, const char *client_name, destination_address *addr)
 {
     struct order *order;
-    struct client_data *client;
+    client_data *client;
 
     /* TODO: clients registry */
 
-    client_name = context_strcpy(s->ctx, client_name);
-    client = client_create(s->ctx, client_name);
-    order = order_create(s->ctx, s->next_id++, client, s->standard);
+    client = order_service_find_client(&s->client_registry, client_name);
+    order = order_create(s->ctx, s->next_id++, client, addr, s->standard);
 
     order_service_add_order(s, order);
 

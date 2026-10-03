@@ -13,13 +13,13 @@ struct order_item {
 
 struct order_info {
     int id;
-    struct client_data *client;
+    client_data *client;
     struct order_item *items;
     size_t items_count;
     size_t items_cap;
     time_t created_at;
     time_t estimated_at;
-    struct destination_address *dest_addr;
+    destination_address *dest_addr;
 };
 
 struct order {
@@ -29,11 +29,12 @@ struct order {
     courier *courier;
 };
 
-struct order *order_create(struct context *ctx, int id, struct client_data *client, order_kind *kind)
+struct order *order_create(struct context *ctx, int id, client_data *client, destination_address *addr, order_kind *kind)
 {
     struct order *o = context_alloc(ctx, sizeof *o);
     o->info.id = id;
     o->info.client = client;
+    o->info.dest_addr = addr;
     o->kind = kind;
     time(&o->info.created_at);
     return o;
@@ -91,13 +92,14 @@ void order_print(const struct order *o)
     printf("Created at: %.*s\n", (int)strlen(time)-1, time);
     time = ctime(&o->info.estimated_at);
     printf("Estimated at: %.*s\n", (int)strlen(time)-1, time);
-    /* TODO: print_destination_address(o->dest_addr); */
     printf("Client:\n");
     client_print(o->info.client, 4);
     printf("Ordered items:\n");
     for (i = 0; i < o->info.items_count; ++i) {
         print_order_item(&o->info.items[i], 4);
     }
+    if (o->courier) courier_print(o->courier);
+    destination_address_print(o->info.dest_addr, 0);
 }
 
 int order_assign_courier(struct order *o, courier *c)

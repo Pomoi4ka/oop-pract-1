@@ -4,6 +4,7 @@
 #include "../runtime/context.h"
 #include "courier.h"
 #include "client.h"
+#include "destination_address.h"
 
 struct order;
 
@@ -17,7 +18,7 @@ enum order_status_transition_result {
 
 const char *order_status_transition_result_as_cstr(enum order_status_transition_result);
 
-struct order *order_create(struct context *, int id, struct client_data *, order_kind *);
+struct order *order_create(struct context *, int id, client_data *, destination_address *, order_kind *);
 void order_print(const struct order *);
 void order_add_item(struct order *o, const char *name, int q, float price);
 void order_set_order_kind(struct order *, order_kind *);

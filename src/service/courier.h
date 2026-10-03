@@ -13,5 +13,6 @@ struct courier;
 typedef struct courier const courier;
 
 courier *courier_create(struct context *, const char *name, int);
+void courier_print(courier *);
 
 #endif /* COURIER_H_ */
