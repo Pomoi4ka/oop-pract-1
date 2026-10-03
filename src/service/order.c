@@ -157,15 +157,15 @@ courier *order_get_courier(const struct order *order)
 
 double order_calc_cost(const struct order *o)
 {
-    return (double)o->kind->vptr->calc_cost(o->kind, (struct order *)o);
+    return (double)o->kind->vptr->calc_cost(o->kind, o);
 }
 
 double order_calc_eta_hours(const struct order *o)
 {
-    return (double)o->kind->vptr->calc_estimated_time(o->kind, (struct order *)o);
+    return (double)o->kind->vptr->calc_estimated_time(o->kind, o);
 }
 
 int order_can_change_status(const struct order *o, enum order_status to)
 {
-    return o->kind->vptr->allows_transition(o->kind, (struct order *)o, to) == OSTR_SUCCESS;
+    return o->kind->vptr->allows_transition(o->kind, o, to) == OSTR_SUCCESS;
 }

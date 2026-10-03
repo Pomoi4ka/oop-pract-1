@@ -30,13 +30,13 @@ order_kind *order_kind_express_create(struct context *ctx)
     return &s->base;
 }
 
-static float exp_calc_cost(order_kind *kind, struct order *o)
+static float exp_calc_cost(order_kind *kind, const struct order *o)
 {
     const struct express_order_kind *s = (const void *)kind;
     return s->base_price + s->per_item * order_get_items_count(o);
 }
 
-static float exp_calc_estimated_time(order_kind *kind, struct order *o)
+static float exp_calc_estimated_time(order_kind *kind, const struct order *o)
 {
     (void) kind;
     (void) o;
@@ -44,14 +44,14 @@ static float exp_calc_estimated_time(order_kind *kind, struct order *o)
 }
 
 
-static int exp_needs_courier(order_kind *kind, struct order *o)
+static int exp_needs_courier(order_kind *kind, const struct order *o)
 {
     (void) kind;
     (void) o;
     return 1;
 }
 
-static enum order_status_transition_result exp_allows_transition(order_kind *kind, struct order *order, enum order_status to)
+static enum order_status_transition_result exp_allows_transition(order_kind *kind, const struct order *order, enum order_status to)
 {
     static const struct allowed_order_status_transition table[] = {
         {ORDER_STATUS_PACKING, ORDER_STATUS_ON_THE_WAY},

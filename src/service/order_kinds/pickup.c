@@ -29,20 +29,20 @@ order_kind *order_kind_pickup_create(struct context *ctx)
     return &s->base;
 }
 
-static float pkp_calc_cost(order_kind *kind, struct order *o)
+static float pkp_calc_cost(order_kind *kind, const struct order *o)
 {
     const struct pickup_order_kind *s = (const void *)kind;
     return s->base_price + s->per_item * order_get_items_count(o);
 }
 
-static float pkp_calc_estimated_time(order_kind *kind, struct order *o)
+static float pkp_calc_estimated_time(order_kind *kind, const struct order *o)
 {
     (void)kind;
     (void)o;
     return 1;
 }
 
-static int pkp_needs_courier(order_kind *kind, struct order *o)
+static int pkp_needs_courier(order_kind *kind, const struct order *o)
 {
     (void)kind;
     (void)o;
@@ -50,7 +50,7 @@ static int pkp_needs_courier(order_kind *kind, struct order *o)
 }
 
 static enum order_status_transition_result
-pkp_allows_transition(order_kind *kind, struct order *order, enum order_status to)
+pkp_allows_transition(order_kind *kind, const struct order *order, enum order_status to)
 {
     static const struct allowed_order_status_transition table[] = {
         {ORDER_STATUS_PACKING,         ORDER_STATUS_READY_FOR_PICKUP},

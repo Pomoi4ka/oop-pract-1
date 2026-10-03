@@ -29,20 +29,20 @@ order_kind *order_kind_standard_create(struct context *ctx)
     return &s->base;
 }
 
-static float std_calc_cost(order_kind *kind, struct order *o)
+static float std_calc_cost(order_kind *kind, const struct order *o)
 {
     const struct standard_order_kind *s = (const void *)kind;
     return s->base_price + s->per_item * order_get_items_count(o);
 }
 
-static float std_calc_estimated_time(order_kind *kind, struct order *o)
+static float std_calc_estimated_time(order_kind *kind, const struct order *o)
 {
     (void)o;
     (void)kind;
     return 24;
 }
 
-static int std_needs_courier(order_kind *kind, struct order *o)
+static int std_needs_courier(order_kind *kind, const struct order *o)
 {
     (void)o;
     (void)kind;
@@ -50,7 +50,7 @@ static int std_needs_courier(order_kind *kind, struct order *o)
 }
 
 static enum order_status_transition_result
-std_allows_transition(order_kind *kind, struct order *order, enum order_status to)
+std_allows_transition(order_kind *kind, const struct order *order, enum order_status to)
 {
     static const struct allowed_order_status_transition table[] = {
         {ORDER_STATUS_PACKING, ORDER_STATUS_ON_THE_WAY},

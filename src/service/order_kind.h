@@ -21,10 +21,10 @@ struct allowed_order_status_transition {
 typedef const struct order_kind order_kind;
 
 #define ORDER_KIND_METHODS \
-    M(float, calc_cost, (kind, order), (order_kind *, struct order *)) \
-    M(float, calc_estimated_time, (kind, order), (order_kind *, struct order *)) \
-    M(int, needs_courier, (kind, order), (order_kind *, struct order *)) \
-    M(enum order_status_transition_result, allows_transition, (kind, order, status), (order_kind *, struct order *, enum order_status)) \
+    M(float, calc_cost, (kind, order), (order_kind *, const struct order *)) \
+    M(float, calc_estimated_time, (kind, order), (order_kind *, const struct order *)) \
+    M(int, needs_courier, (kind, order), (order_kind *, const struct order *)) \
+    M(enum order_status_transition_result, allows_transition, (kind, order, status), (order_kind *, const struct order *, enum order_status)) \
 
 struct order_kind_vtable {
 #define M(ret, name, pnames, ptypes) ret (*name)ptypes;
