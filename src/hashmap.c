@@ -42,20 +42,18 @@ static void *hashmap_slot_at(struct hashmap *base, unsigned index)
     return (char *)base->items + index*base->itemsize;
 }
 
-static unsigned int hashmap_keyindex(struct hashmap *base, const void *key, int find_inset_slot)
+static unsigned int hashmap_keyindex(struct hashmap *base, const void *key, int find_insert_slot)
 {
     unsigned int keyhash = base->hasheq(HASHEQ_HASH, key, NULL);
-    size_t limit = 100*base->cap/75;
+    size_t limit = 4*base->cap/3;
     size_t i;
-
-    if (!base->cap) return ~0;
 
     for (i = 0; i < limit; ++i) {
         int eq = 0, isset;
         size_t index = (keyhash+i)%base->cap;
         isset = hashmap_index_ctl(base, index, ICTL_IS_SET);
         if (isset) eq = base->hasheq(HASHEQ_EQ, key, hashmap_slot_at(base, index));
-        if (find_inset_slot) {
+        if (find_insert_slot) {
             if (eq) return index;
             if (isset) continue;
         } else {

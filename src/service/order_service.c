@@ -10,10 +10,15 @@ struct client_registry {
     struct hashmap *map;
 };
 
+struct courier_registry {
+    struct hashmap *map;
+};
+
 struct order_service {
     struct context *ctx;
 
     struct client_registry client_registry;
+    struct courier_registry courier_registry;
 
     /* Singletons */
     order_kind *standard;
@@ -65,6 +70,7 @@ struct order_service *order_service_create(struct context *ctx)
     svc->ctx = ctx;
     /* this is stupid, but the data should not move, so its kinda makes sense */
     svc->client_registry.map = hashmap_create(ctx, client_hasheq, sizeof(client_data*));
+    svc->courier_registry.map = hashmap_create(ctx, courier_hasheq, sizeof(courier*));
     svc->standard = order_kind_standard_create(ctx);
     svc->express = order_kind_express_create(ctx);
     svc->next_id = 1;
@@ -132,8 +138,6 @@ struct order *order_service_create_order(struct order_service *s, const char *cl
 {
     struct order *order;
     client_data *client;
-
-    /* TODO: clients registry */
 
     client = order_service_find_client(&s->client_registry, client_name);
     if (!client) {

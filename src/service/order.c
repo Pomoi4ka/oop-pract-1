@@ -98,7 +98,7 @@ void order_print(const struct order *o)
     for (i = 0; i < o->info.items_count; ++i) {
         print_order_item(&o->info.items[i], 4);
     }
-    if (o->courier) courier_print(o->courier);
+    if (o->courier) courier_print(o->courier, 0);
     destination_address_print(o->info.dest_addr, 0);
 }
 

@@ -1,6 +1,7 @@
 #include "courier.h"
 
 #include <stdio.h>
+#include <string.h>
 #include <assert.h>
 
 struct courier {
@@ -16,8 +17,24 @@ courier *courier_create(struct context *ctx, const char *name, int notes)
     return c;
 }
 
-void courier_print(courier *c)
+void courier_print(courier *c, int pad)
 {
-    (void)c;
-    assert(0 && "todo");
+    printf("%*sCourier name: %s\n", pad, "", c->name);
+    printf("%*sCourier notes:\n", pad, "");
+    if (c->notes & COURIER_NOTES_HAS_CAR)
+        printf("%*shas car\n", pad+2, "");
+}
+
+unsigned courier_hasheq(enum hasheq_op op, const void *pa, const void *pb)
+{
+    courier *const *a, *const *b;
+    a = pa;
+    b = pb;
+    switch (op) {
+    case HASHEQ_EQ:
+        return strcmp((*a)->name, (*b)->name) == 0;
+    case HASHEQ_HASH:
+        return fnv1((*a)->name, strlen((*a)->name));
+    }
+    return -1;
 }

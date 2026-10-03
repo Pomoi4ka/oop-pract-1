@@ -2,6 +2,7 @@
 #define COURIER_H_
 
 #include "../runtime/context.h"
+#include "../hashmap.h"
 
 enum {
     COURIER_NOTES_NONE    = 0x0,
@@ -13,6 +14,7 @@ struct courier;
 typedef struct courier const courier;
 
 courier *courier_create(struct context *, const char *name, int);
-void courier_print(courier *);
+void courier_print(courier *, int pad);
+unsigned courier_hasheq(enum hasheq_op, const void *, const void *);
 
 #endif /* COURIER_H_ */
