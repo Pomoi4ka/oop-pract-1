@@ -125,13 +125,14 @@ void order_service_add_order(struct order_service *s, struct order *order)
 
 client_data *order_service_find_client(struct client_registry *reg, const char *client_name)
 {
-    client_data *c;
+    client_data *const *c;
     struct client_data *pkey;
     struct client_data key;
     key.name = client_name;
     pkey = &key;
     c = hashmap_get(reg->map, &pkey);
-    return c;
+    if (!c) return NULL;
+    return *c;
 }
 
 struct order *order_service_create_order(struct order_service *s, const char *client_name, destination_address *addr)
@@ -157,4 +158,12 @@ void order_service_list(struct order_service *s)
     for (i = 0; i < s->count; ++i) {
         order_print(s->orders[i]);
     }
+}
+
+int order_service_register_client(struct order_service *s, client_data *cd)
+{
+    client_data *d = order_service_find_client(&s->client_registry, cd->name);
+    if (d) return 1;
+    hashmap_insert(s->client_registry.map, &cd);
+    return 0;
 }

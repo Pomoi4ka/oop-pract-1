@@ -4,8 +4,13 @@
 #include <stdlib.h>
 #include <readline/readline.h>
 
-struct menu {
+struct menu_state_list {
     struct menu_state *state;
+    struct menu_state_list *next;
+};
+
+struct menu {
+    struct menu_state_list *stack;
     void *userdata;
     char *input;
     int match;
@@ -48,7 +53,7 @@ static int menu__match_command(struct menu *m, struct menu_command const *cmd)
 static void menu__dispatch(struct menu *m)
 {
     m->match = 0;
-    if (menu__match_command(m, m->state->commands)) return;
+    if (menu__match_command(m, m->stack->state->commands)) return;
     if (menu__match_command(m, common_commands)) return;
 }
 
@@ -83,7 +88,7 @@ static void menu__help(struct menu *m)
 {
     const struct menu_command *p[3], **i;
     int l, max_len = 0;
-    p[0] = m->state->commands;
+    p[0] = m->stack->state->commands;
     p[1] = common_commands;
     p[2] = NULL;
 
@@ -94,7 +99,7 @@ static void menu__help(struct menu *m)
         }
     }
 
-    p[0] = m->state->commands;
+    p[0] = m->stack->state->commands;
     p[1] = common_commands;
     p[2] = NULL;
 
@@ -105,9 +110,15 @@ static void menu__help(struct menu *m)
     }
 }
 
-void menu_set_state(struct menu *m, struct menu_state *state)
+void menu_push_state(struct menu *m, struct menu_state *state)
 {
-    m->state = state;
+    struct context *ctx = context_from_alloc(m);
+    struct menu_state_list *node;
+
+    node = context_alloc(ctx, sizeof *node);
+    node->state = state;
+    node->next = m->stack;
+    m->stack = node;
 }
 
 void *menu_get_userdata(struct menu *m)
@@ -118,4 +129,16 @@ void *menu_get_userdata(struct menu *m)
 void menu_set_userdata(struct menu *m, void *userdata)
 {
     m->userdata = userdata;
+}
+
+struct menu_state *menu_get_state(struct menu *m)
+{
+    return m->stack->state;
+}
+
+void menu_pop_state(struct menu *m)
+{
+    struct menu_state_list *next = m->stack->next;
+    context_free(m->stack);
+    m->stack = next;
 }

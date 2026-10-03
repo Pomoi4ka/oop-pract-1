@@ -12,7 +12,7 @@ struct client_data {
 
 typedef const struct client_data client_data;
 
-client_data *client_create(struct context *, const char *name, const char *phone, const char *email);
+client_data *client_heapify(struct context *, client_data *);
 int client_validate_phone(const char *phone);
 int client_validate_email(const char *email);
 void client_print(client_data *, int pad);

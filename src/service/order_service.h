@@ -13,6 +13,7 @@ enum order_service_error {
 struct order_service *order_service_create(struct context *ctx);
 struct order *order_service_create_order(struct order_service *s, const char *client_name, destination_address *);
 struct order *order_service_find(struct order_service *s, int id);
+int  order_service_register_client(struct order_service *s, client_data *);
 void order_service_list(struct order_service *s);
 void order_service_set_kind(struct order_service *s, int id, order_kind *);
 void order_service_assign_courier(struct order_service *s, int id, const char *name, int notes);

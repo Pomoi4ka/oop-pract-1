@@ -3,13 +3,10 @@
 #include <stdio.h>
 #include <string.h>
 
-client_data *client_create(struct context *ctx, const char *name, const char *phone, const char *email)
+client_data *client_heapify(struct context *ctx, client_data *cdata)
 {
-    struct client_data *data;
-    data = context_alloc(ctx, sizeof *data);
-    data->name = name;
-    data->phone = phone;
-    data->email = email;
+    struct client_data *data = context_alloc(ctx, sizeof *data);
+    memcpy(data, cdata, sizeof *data);
     return data;
 }
 

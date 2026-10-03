@@ -101,7 +101,7 @@ void context_free(void *p)
     free(h);
 }
 
-char *context_strcpy(struct context *c, const char *cstr)
+char *context_strdup(struct context *c, const char *cstr)
 {
     char *copy = context_alloc(c, strlen(cstr) + 1);
     strcpy(copy, cstr);
