@@ -24,17 +24,17 @@ struct order_info {
 
 struct order {
     struct order_info info;
-    struct order_kind *kind;
+    order_kind *kind;
     enum order_status status;
-    struct courier *courier;
+    courier *courier;
 };
 
-struct order *order_create(struct context *ctx, int id, struct client_data *client)
+struct order *order_create(struct context *ctx, int id, struct client_data *client, order_kind *kind)
 {
     struct order *o = context_alloc(ctx, sizeof *o);
     o->info.id = id;
     o->info.client = client;
-    o->kind = order_kind_dummy_create(ctx);
+    o->kind = kind;
     time(&o->info.created_at);
     return o;
 }
@@ -86,7 +86,7 @@ void order_print(const struct order *o)
 
     printf("Id: %d\n", o->info.id);
     printf("Status: %s\n", order_status_as_cstr(o->status));
-    o->kind->vptr->print(o->kind);
+    printf("Delivery type: %s\n", o->kind->name);
     time = ctime(&o->info.created_at);
     printf("Created at: %.*s\n", (int)strlen(time)-1, time);
     time = ctime(&o->info.estimated_at);
@@ -100,16 +100,29 @@ void order_print(const struct order *o)
     }
 }
 
-int order_assign_courier(struct order *o, struct courier *c)
+int order_assign_courier(struct order *o, courier *c)
 {
     if (!o->kind->vptr->needs_courier(o->kind, o)) return 0;
     o->courier = c;
     return 1;
 }
 
-int order_change_status(struct order *o, enum order_status new_status)
+const char *order_status_transition_result_as_cstr(enum order_status_transition_result r)
 {
-    if (!o->kind->vptr->allows_transition(o->kind, new_status))
+    switch (r) {
+    case OSTR_SUCCESS:
+        return "success";
+    case OSTR_COURIER_IS_NOT_SET_YET:
+        return "courier is not set yet";
+    case OSTR_INVALID_NEW_STATUS_FOR_THIS_KIND_OF_ORDER:
+        return "invalid new status for this kind of order";
+    }
+    assert(0 && "unreachable");
+}
+
+enum order_status_transition_result order_change_status(struct order *o, enum order_status new_status)
+{
+    if (!o->kind->vptr->allows_transition(o->kind, o, new_status))
         return 0;
     o->status = new_status;
     return 1;
@@ -125,12 +138,17 @@ int order_get_id(struct order const *o)
     return o->info.id;
 }
 
-const struct order_kind *order_get_order_kind(const struct order *order)
-{
-    return order->kind;
-}
-
-void order_set_order_kind(struct order *order, struct order_kind *kind)
+void order_set_order_kind(struct order *order, order_kind *kind)
 {
     order->kind = kind;
+}
+
+enum order_status order_get_status(const struct order *order)
+{
+    return order->status;
+}
+
+courier *order_get_courier(const struct order *order)
+{
+    return order->courier;
 }

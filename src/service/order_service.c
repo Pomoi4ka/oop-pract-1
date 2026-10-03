@@ -26,6 +26,8 @@ struct order_service *order_service_create(struct context *ctx)
     struct order_service *svc;
     svc = context_alloc(ctx, sizeof *svc);
     svc->ctx = ctx;
+    svc->standard = order_kind_standard_create(ctx);
+    svc->express = order_kind_express_create(ctx);
     svc->next_id = 1;
     return svc;
 }
@@ -41,7 +43,7 @@ void order_service_set_delivery(struct order_service *s, int id, struct order_ki
 void order_service_assign_courier(struct order_service *s, int id, const char *name, int notes)
 {
     struct order *order = order_service_find(s, id);
-    struct courier *c;
+    courier *c;
     if (!order) return;
 
     /* TODO: couriers registry */
@@ -85,7 +87,7 @@ struct order *order_service_create_order(struct order_service *s, const char *cl
 
     client_name = context_strcpy(s->ctx, client_name);
     client = client_create(s->ctx, client_name);
-    order = order_create(s->ctx, s->next_id++, client);
+    order = order_create(s->ctx, s->next_id++, client, s->standard);
 
     order_service_add_order(s, order);
 

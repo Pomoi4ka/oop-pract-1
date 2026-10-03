@@ -10,7 +10,8 @@ enum {
 
 struct courier;
 
-struct courier *courier_create(struct context *, const char *name, int);
-int courier_has_car(struct courier *);
+typedef struct courier const courier;
+
+courier *courier_create(struct context *, const char *name, int);
 
 #endif /* COURIER_H_ */

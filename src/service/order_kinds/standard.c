@@ -1,4 +1,3 @@
-#include "../order_kind.h"
 #include "../order.h"
 
 #include <assert.h>
@@ -19,23 +18,24 @@ struct standard_order_kind {
     float per_item;
 };
 
-struct order_kind *standard_order_kind_create(struct context *ctx)
+order_kind *order_kind_standard_create(struct context *ctx)
 {
     struct standard_order_kind *s;
     s = context_alloc(ctx, sizeof *s);
     s->base.vptr = &vtable;
+    s->base.name = "Standard delivery";
     s->base_price = 300.0f;
     s->per_item = 50.0f;
     return &s->base;
 }
 
-static float std_calc_cost(struct order_kind *kind, struct order *o)
+static float std_calc_cost(order_kind *kind, struct order *o)
 {
     const struct standard_order_kind *s = (const void *)kind;
     return s->base_price + s->per_item * order_get_items_count(o);
 }
 
-static float std_calc_estimated_time(struct order_kind *kind, struct order *o)
+static float std_calc_estimated_time(order_kind *kind, struct order *o)
 {
     (void) o;
     (void) kind;
@@ -43,22 +43,17 @@ static float std_calc_estimated_time(struct order_kind *kind, struct order *o)
 }
 
 
-static int std_needs_courier(struct order_kind *kind, struct order *o)
+static int std_needs_courier(order_kind *kind, struct order *o)
 {
     (void)o;
     (void)kind;
     return 1;
 }
 
-static void std_print(struct order_kind *kind)
+static enum order_status_transition_result std_allows_transition(order_kind *kind, struct order *order, enum order_status status)
 {
     (void) kind;
-    assert(0);
-}
-
-static int std_allows_transition(struct order_kind *kind, enum order_status status)
-{
-    (void) kind;
+    (void) order;
     (void) status;
     assert(0);
 }
