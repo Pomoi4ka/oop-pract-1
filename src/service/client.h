@@ -1,6 +1,7 @@
 #ifndef CLIENT_H_
 #define CLIENT_H_
 
+#include "../hashmap.h"
 #include "../runtime/context.h"
 
 struct client_data {
@@ -15,5 +16,6 @@ client_data *client_create(struct context *, const char *name, const char *phone
 int client_validate_phone(const char *phone);
 int client_validate_email(const char *email);
 void client_print(client_data *, int pad);
+unsigned client_hasheq(enum hasheq_op, const void *, const void *);
 
 #endif /* CLIENT_H_ */

@@ -24,10 +24,23 @@ struct menu_state *main_menu_create(struct context *ctx)
     return s;
 }
 
+static void print_order_service_error(struct order_service *s)
+{
+    enum order_service_error e = order_service_get_error(s);
+    fprintf(stderr, "error: service errored: ");
+    switch (e) {
+    case OSE_NONE: fprintf(stderr, "no error\n"); break;
+    case OSE_USER_DOESNOT_EXISTS: fprintf(stderr, "user does not exists\n"); break;
+    case OSE_NO_SUCH_ORDER_WITH_ID: fprintf(stderr, "no such order with the id\n"); break;
+    case OSE_INVALID_NEW_STATUS: fprintf(stderr, "invalid new status\n"); break;
+    }
+}
+
 static void new_order(struct menu *m)
 {
     struct context *ctx = context_from_alloc(m);
     struct order_service *s = menu_get_userdata(m);
+    struct order *order;
     const char *client_name;
     destination_address *dest;
 
@@ -35,7 +48,9 @@ static void new_order(struct menu *m)
     client_name = menu_prompt(m, "client name");
     dest        = destination_address_create(ctx, "TODO-City", "TODO-Street", "TODO-building", NULL, NULL);
 
-    order_service_create_order(s, client_name, dest);
+    order = order_service_create_order(s, client_name, dest);
+    if (order) order_print(order);
+    else print_order_service_error(s);
 }
 
 static void list_orders(struct menu *m)

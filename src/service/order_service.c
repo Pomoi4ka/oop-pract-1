@@ -1,12 +1,13 @@
 #include "order_service.h"
 
 #include <assert.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
+#include "../hashmap.h"
+
 struct client_registry {
-    int TODO_HASHMAP;
+    struct hashmap *map;
 };
 
 struct order_service {
@@ -14,28 +15,46 @@ struct order_service {
 
     struct client_registry client_registry;
 
+    /* Singletons */
     order_kind *standard;
     order_kind *express;
 
     struct order **orders;
     size_t count, cap;
     int next_id;
+
+    enum order_service_error err;
+
 };
 
-static int order_compare(const void *pa, const void *pb)
+enum order_service_error order_service_get_error(struct order_service *s)
 {
-    const struct order *a, *b;
-    a = pa;
-    b = pb;
-
-    return order_get_id(b) - order_get_id(a);
+    return s->err;
 }
 
 struct order *order_service_find(struct order_service *s, int id)
 {
-    struct order *order;
-    order = bsearch(&id, s->orders, s->count, s->count * sizeof *s->orders, order_compare);
-    if (!order) fprintf(stderr, "error: failed to find order with id %d\n", id);
+    struct order *order = NULL;
+    size_t i, lo, hi;
+
+    lo = 0;
+    hi = s->count;
+
+    while (hi - lo) {
+        int c_id;
+        i = lo + (hi - lo)/2;
+        c_id = order_get_id(s->orders[i]);
+        if (c_id > id) lo = i;
+        else if (c_id < id) hi = i-1;
+        else break;
+    }
+
+    if (order_get_id(s->orders[i]) == id)
+        order = s->orders[i];
+
+    if (!order)
+        s->err = OSE_NO_SUCH_ORDER_WITH_ID;
+
     return order;
 }
 
@@ -44,6 +63,8 @@ struct order_service *order_service_create(struct context *ctx)
     struct order_service *svc;
     svc = context_alloc(ctx, sizeof *svc);
     svc->ctx = ctx;
+    /* this is stupid, but the data should not move, so its kinda makes sense */
+    svc->client_registry.map = hashmap_create(ctx, client_hasheq, sizeof(client_data*));
     svc->standard = order_kind_standard_create(ctx);
     svc->express = order_kind_express_create(ctx);
     svc->next_id = 1;
@@ -78,7 +99,7 @@ void order_service_change_status(struct order_service *s, int id, enum order_sta
 
     ret = order_change_status(order, st);
     if (ret) return;
-    fprintf(stderr, "error: failed to change status\n");
+    s->err = OSE_INVALID_NEW_STATUS;
 }
 
 void order_service_add_order(struct order_service *s, struct order *order)
@@ -98,9 +119,13 @@ void order_service_add_order(struct order_service *s, struct order *order)
 
 client_data *order_service_find_client(struct client_registry *reg, const char *client_name)
 {
-    (void) reg;
-    (void) client_name;
-   assert(0 && "TODO");
+    client_data *c;
+    struct client_data *pkey;
+    struct client_data key;
+    key.name = client_name;
+    pkey = &key;
+    c = hashmap_get(reg->map, &pkey);
+    return c;
 }
 
 struct order *order_service_create_order(struct order_service *s, const char *client_name, destination_address *addr)
@@ -111,8 +136,12 @@ struct order *order_service_create_order(struct order_service *s, const char *cl
     /* TODO: clients registry */
 
     client = order_service_find_client(&s->client_registry, client_name);
-    order = order_create(s->ctx, s->next_id++, client, addr, s->standard);
+    if (!client) {
+        s->err = OSE_USER_DOESNOT_EXISTS;
+        return NULL;
+    }
 
+    order = order_create(s->ctx, s->next_id++, client, addr, s->standard);
     order_service_add_order(s, order);
 
     return order;
