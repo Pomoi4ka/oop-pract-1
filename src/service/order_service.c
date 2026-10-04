@@ -155,7 +155,7 @@ struct order *order_service_create_order(struct order_service *s, const char *cl
 
     client = order_service_find_client(&s->client_registry, client_name);
     if (!client) {
-        s->err = OSE_USER_DOESNOT_EXISTS;
+        s->err = OSE_CLIENT_DOESNOT_EXISTS;
         return NULL;
     }
 

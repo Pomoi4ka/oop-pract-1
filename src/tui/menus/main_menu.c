@@ -97,9 +97,9 @@ static void new_order(struct menu *m)
     }
     err = order_service_get_error(s);
     print_order_service_error(err);
-    if (err != OSE_USER_DOESNOT_EXISTS) return;
+    if (err != OSE_CLIENT_DOESNOT_EXISTS) return;
 
-    printf("Create new user?\n");
+    printf("Create new client?\n");
     question = yes_no_menu_create(ctx, open_client_creation, NULL, NULL);
     menu_push_state(m, question);
 }

@@ -9,7 +9,7 @@ void print_order_service_error(enum order_service_error err)
     case OSE_NONE:
         fprintf(stderr, "no error\n");
         break;
-    case OSE_USER_DOESNOT_EXISTS:
+    case OSE_CLIENT_DOESNOT_EXISTS:
         fprintf(stderr, "user does not exists\n");
         break;
     case OSE_NO_SUCH_ORDER_WITH_ID:
