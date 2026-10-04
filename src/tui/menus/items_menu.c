@@ -29,7 +29,7 @@ struct menu_state *items_menu_create(struct context *ctx, int order_id)
 static void add(struct menu *m)
 {
     struct menu_items *s = (void *)menu_get_state(m);
-    struct order_service *svc = (struct order_service *)menu_get_userdata(m);
+    struct order_service *svc = menu_get_userdata(m);
     const char *qty_s, *price_s;
     char *name;
     int qty;
@@ -59,7 +59,7 @@ static void add(struct menu *m)
 static void done(struct menu *m)
 {
     struct menu_items *s = (void *)menu_get_state(m);
-    struct order_service *svc = (struct order_service *)menu_get_userdata(m);
+    struct order_service *svc = menu_get_userdata(m);
     struct order *o = order_service_find(svc, s->order_id);
 
     if (o) order_print(o);

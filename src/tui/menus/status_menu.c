@@ -34,7 +34,7 @@ static void change_status(struct menu *m)
     size_t i;
 
     s = (struct menu_status *)menu_get_state(m);
-    svc = (struct order_service *)menu_get_userdata(m);
+    svc = menu_get_userdata(m);
     input = menu_get_input(m);
 
     for (i = 0; i < STATUS_TABLE_N; ++i) {

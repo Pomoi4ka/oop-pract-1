@@ -60,7 +60,7 @@ static void new_order(struct menu *m)
     struct menu_state *question;
 
     ctx = context_from_alloc(m);
-    s = (struct order_service *)menu_get_userdata(m);
+    s = menu_get_userdata(m);
 
     /* menu_prompt переиспользует m->input, поэтому копируем сразу */
     client_name = prompt_dup(m, ctx, "client name: ");
@@ -89,7 +89,7 @@ static void new_order(struct menu *m)
 static void list_orders(struct menu *m)
 {
     struct order_service *s;
-    s = (struct order_service *)menu_get_userdata(m);
+    s = menu_get_userdata(m);
     order_service_list(s);
 }
 
@@ -102,7 +102,7 @@ static void add_items(struct menu *m)
     int id;
 
     ctx = context_from_alloc(m);
-    s = (struct order_service *)menu_get_userdata(m);
+    s = menu_get_userdata(m);
 
     id_str = menu_prompt(m, "order id: ");
     id = atoi(id_str);
@@ -123,7 +123,7 @@ static void manage(struct menu *m)
     int id;
 
     ctx = context_from_alloc(m);
-    s = (struct order_service *)menu_get_userdata(m);
+    s = menu_get_userdata(m);
 
     id_str = menu_prompt(m, "order id: ");
     id = atoi(id_str);
@@ -148,7 +148,7 @@ static void status(struct menu *m)
     int id;
 
     ctx = context_from_alloc(m);
-    s = (struct order_service *)menu_get_userdata(m);
+    s = menu_get_userdata(m);
 
     id_str = menu_prompt(m, "order id: ");
     id = atoi(id_str);
@@ -169,7 +169,7 @@ struct courier_stash {
 static void courier_assign_go(struct menu *m, void *userdata, int has_car)
 {
     struct courier_stash *st = userdata;
-    struct order_service *svc = (struct order_service *)menu_get_userdata(m);
+    struct order_service *svc = menu_get_userdata(m);
     int notes = has_car ? COURIER_NOTES_HAS_CAR : COURIER_NOTES_NONE;
 
     order_service_assign_courier(svc, st->id, st->name, notes);
