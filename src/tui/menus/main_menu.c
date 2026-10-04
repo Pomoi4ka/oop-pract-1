@@ -30,25 +30,6 @@ struct menu_state *main_menu_create(struct context *ctx)
     return s;
 }
 
-static char *prompt_dup(struct menu *m, struct context *ctx, const char *prompt)
-{
-    return context_strdup(ctx, menu_prompt(m, prompt));
-}
-
-static char *prompt_dup_opt(struct menu *m, struct context *ctx, const char *prompt)
-{
-    const char *s = menu_prompt(m, prompt);
-    if (!*s) return NULL;
-    return context_strdup(ctx, s);
-}
-
-static void open_client_creation(struct menu *m, void *userdata)
-{
-    struct context *ctx = context_from_alloc(m);
-    (void)userdata;
-    menu_push_state(m, client_creation_menu_create(ctx));
-}
-
 static int prompt_order_id_with_checking_the_db____wasteful_but_otherwise_ux_is_shit(struct menu *m, struct order **order)
 {
     struct order *o;
@@ -69,39 +50,8 @@ static int prompt_order_id_with_checking_the_db____wasteful_but_otherwise_ux_is_
 
 static void new_order(struct menu *m)
 {
-    struct context *ctx;
-    struct order_service *s;
-    struct order *order;
-    char *client_name, *city, *street, *building, *apartment, *comment;
-    destination_address *dest;
-    enum order_service_error err;
-    struct menu_state *question;
-
-    ctx = context_from_alloc(m);
-    s = menu_get_userdata(m);
-
-    /* menu_prompt переиспользует m->input, поэтому копируем сразу */
-    client_name = prompt_dup(m, ctx, "client name: ");
-    city        = prompt_dup(m, ctx, "city: ");
-    street      = prompt_dup(m, ctx, "street: ");
-    building    = prompt_dup(m, ctx, "building: ");
-    apartment   = prompt_dup_opt(m, ctx, "apartment (empty to skip): ");
-    comment     = prompt_dup_opt(m, ctx, "comment (empty to skip): ");
-
-    dest = destination_address_create(ctx, city, street, building, apartment, comment);
-
-    order = order_service_create_order(s, client_name, dest);
-    if (order) {
-        order_print(order);
-        return;
-    }
-    err = order_service_get_error(s);
-    print_order_service_error(err);
-    if (err != OSE_CLIENT_DOESNOT_EXISTS) return;
-
-    printf("Create new client?\n");
-    question = yes_no_menu_create(ctx, open_client_creation, NULL, NULL);
-    menu_push_state(m, question);
+    struct context *ctx = context_from_alloc(m);
+    menu_push_state(m, new_order_menu_create(ctx));
 }
 
 static void list_orders(struct menu *m)
