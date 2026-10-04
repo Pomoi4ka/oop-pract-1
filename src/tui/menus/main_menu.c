@@ -49,6 +49,24 @@ static void open_client_creation(struct menu *m, void *userdata)
     menu_push_state(m, client_creation_menu_create(ctx));
 }
 
+static int prompt_order_id_with_checking_the_db____wasteful_but_otherwise_ux_is_shit(struct menu *m, struct order **order)
+{
+    struct order *o;
+    struct order_service *s;
+    int id;
+
+    s = menu_get_userdata(m);
+    id = atoi(menu_prompt(m, "order id: "));
+    o = order_service_find(s, id);
+    if (!o) {
+        print_order_service_error(order_service_get_error(s));
+        if (order) *order = NULL;
+        return -1;
+    }
+    if (order) *order = o;
+    return id;
+}
+
 static void new_order(struct menu *m)
 {
     struct context *ctx;
@@ -96,42 +114,24 @@ static void list_orders(struct menu *m)
 static void add_items(struct menu *m)
 {
     struct context *ctx;
-    struct order_service *s;
-    const char *id_str;
-    struct order *o;
     int id;
 
     ctx = context_from_alloc(m);
-    s = menu_get_userdata(m);
-
-    id_str = menu_prompt(m, "order id: ");
-    id = atoi(id_str);
-    o = order_service_find(s, id);
-    if (!o) {
-        print_order_service_error(order_service_get_error(s));
-        return;
-    }
+    id = prompt_order_id_with_checking_the_db____wasteful_but_otherwise_ux_is_shit(m, NULL);
+    if (id < 0) return;
     menu_push_state(m, items_menu_create(ctx, id));
 }
 
 static void manage(struct menu *m)
 {
     struct context *ctx;
-    struct order_service *s;
-    const char *id_str;
     struct order *o;
     int id;
 
     ctx = context_from_alloc(m);
-    s = menu_get_userdata(m);
 
-    id_str = menu_prompt(m, "order id: ");
-    id = atoi(id_str);
-    o = order_service_find(s, id);
-    if (!o) {
-        print_order_service_error(order_service_get_error(s));
-        return;
-    }
+    id = prompt_order_id_with_checking_the_db____wasteful_but_otherwise_ux_is_shit(m, &o);
+    if (id < 0) return;
     if (!order_can_change_kind(o)) {
         fprintf(stderr, "error: order kind is frozen after packing started\n");
         return;
@@ -142,21 +142,12 @@ static void manage(struct menu *m)
 static void status(struct menu *m)
 {
     struct context *ctx;
-    struct order_service *s;
-    const char *id_str;
     struct order *o;
     int id;
 
     ctx = context_from_alloc(m);
-    s = menu_get_userdata(m);
-
-    id_str = menu_prompt(m, "order id: ");
-    id = atoi(id_str);
-    o = order_service_find(s, id);
-    if (!o) {
-        print_order_service_error(order_service_get_error(s));
-        return;
-    }
+    id = prompt_order_id_with_checking_the_db____wasteful_but_otherwise_ux_is_shit(m, &o);
+    if (id < 0) return;
     order_print(o);
     menu_push_state(m, status_menu_create(ctx, id, o));
 }
@@ -191,14 +182,13 @@ static void courier_assign_no(struct menu *m, void *userdata)
 static void assign(struct menu *m)
 {
     struct context *ctx;
-    const char *id_str;
     struct courier_stash *st;
     int id;
 
     ctx = context_from_alloc(m);
 
-    id_str = menu_prompt(m, "order id: ");
-    id = atoi(id_str);
+    id = prompt_order_id_with_checking_the_db____wasteful_but_otherwise_ux_is_shit(m, NULL);
+    if (id < 0) return;
 
     st = context_alloc(ctx, sizeof *st);
     st->id = id;
