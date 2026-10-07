@@ -2,5 +2,7 @@ main
 *.o
 *.d
 *.aux
+*.out
 *.log
 assets/*.tex
+assets/*.png

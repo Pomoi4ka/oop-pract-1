@@ -20,6 +20,39 @@
 \usepackage{xcolor}
 \usepackage{tabularray}
 \lstset{extendedchars=\true}
+\usepackage{hyperref}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=black,
+    urlcolor=blue,
+    pdftitle={Описание интерфейса пользователя},
+}
+
+\definecolor{sessionbg}{gray}{0.96}
+\definecolor{sessionframe}{gray}{0.55}
+
+\lstdefinestyle{session}{
+    basicstyle=\ttfamily\small,
+    breaklines=true,
+    columns=fullflexible,
+    keepspaces=true,
+    frame=single,
+    framesep=6pt,
+    framerule=0.4pt,
+    rulecolor=\color{sessionframe},
+    backgroundcolor=\color{sessionbg},
+    showstringspaces=false,
+    upquote=true,
+    aboveskip=8pt,
+    belowskip=8pt,
+    captionpos=b,
+    xleftmargin=0pt,
+    xrightmargin=0pt,
+}
+
+\newcommand{\cmd}[1]{\texttt{#1}}
+\newcommand{\ui}[1]{\texttt{>\,#1}}
 
 \definecolor{codebg}{gray}{0.96}
 \definecolor{comment}{gray}{0.45}
@@ -53,12 +86,12 @@
   belowskip    = \medskipamount,
   captionpos   = b,
 }
-\lstset{style=coolprint}
 
 \usepackage{ragged2e}
 \justifying
 
 \titleformat{\section}{\centering\bfseries}{\thesection}{1em}{}
+\titleformat{\subsection}{\centering\bfseries}{\thesubsection}{1em}{}
 
 \begin{document}
 
@@ -110,14 +143,726 @@
 
 \includegraphics[width=\textwidth]{assets/delivery-service-uml}
 
+Также описание конечного автомата статуса заказов:
+
+\includegraphics[width=\textwidth]{assets/delivery-status-fsm}
+
 \section{Описание интерфейса пользователя программы}
+\lstset{style=session}
+
+\subsection{Общие сведения}
+
+Программа представляет собой интерактивный консольный симулятор
+службы доставки. Взаимодействие с пользователем построено по схеме
+\emph{REPL} (read--eval--print loop): после запуска программа
+переходит в цикл, в котором выводит приглашение \texttt{>\ }, читает
+строку, введённую пользователем, интерпретирует её как команду и
+выполняет соответствующее действие. Ввод строки реализован через
+библиотеку GNU Readline, что даёт пользователю стандартные удобства:
+редактирование строки, история команд, перемещение по ней стрелками.
+
+Интерфейс организован в виде \emph{стека меню}. В каждый момент
+времени активно ровно одно меню, у него есть свой набор команд и,
+при необходимости, собственное состояние (например, черновик заказа
+или заполняемая карточка клиента). Стек позволяет переходить в
+подменю (например, из главного меню в меню создания клиента) и
+возвращаться обратно без потери уже введённых данных.
+
+\subsection{Структура меню}
+
+В любой момент пользователю доступны:
+
+\begin{itemize}
+    \item команды \textbf{текущего меню} (например, у главного меню
+          это \cmd{new\_order}, \cmd{list\_orders}, \cmd{items},
+          \cmd{manage}, \cmd{assign}, \cmd{status});
+    \item \textbf{общие команды}, доступные из любого меню:
+          \cmd{help}~--- печать списка команд с описанием, и
+          \cmd{quit}~/~\cmd{exit}~--- завершение работы программы.
+\end{itemize}
+
+При вводе команды, которой нет ни в текущем меню, ни среди общих,
+программа выводит подсказку:
+
+\renewcommand{\baselinestretch}{1}
+\begin{lstlisting}
+Type "help" for getting all commands for current menu
+\end{lstlisting}
+\renewcommand{\baselinestretch}{1.5}
+
+Команда \cmd{help} выводит список команд активного меню и общих
+команд с их кратким описанием. Формат вывода выравнивает названия
+по максимальной ширине:
+
+\renewcommand{\baselinestretch}{1}
+\begin{lstlisting}
+   new_order   create a new order
+   list_orders list the existing orders
+   items       add items to an order
+   manage      choose delivery kind, show cost and ETA
+   assign      assign courier to the order
+   status      change order status and show current info
+   help        prints this help message
+   quit        terminates program
+   exit
+\end{lstlisting}
+\renewcommand{\baselinestretch}{1.5}
+
+Завершить работу можно также комбинацией \texttt{Ctrl+D} (сигнал
+EOF на стандартном вводе). В этом случае программа корректно
+освобождает все ресурсы и завершается с кодом~0.
+
+\subsection{Инициализация при запуске}
+
+При старте программа автоматически наполняет реестры демонстрационными
+данными: тремя клиентами (Alice, Bob, Carol) и тремя заказами в
+разных статусах и с разными способами доставки. Об этом печатается
+одна строка:
+
+\renewcommand{\baselinestretch}{1}
+\begin{lstlisting}
+[seed] database initialized: 3 clients, 3 orders
+\end{lstlisting}
+\renewcommand{\baselinestretch}{1.5}
+
+Это позволяет сразу после запуска опробовать команды
+\cmd{list\_orders}, \cmd{manage}, \cmd{assign} и \cmd{status},
+не создавая предварительно данные вручную.
+
+\subsection{Модель данных}
+
+Каждый заказ включает:
+
+\begin{itemize}
+    \item уникальный числовой идентификатор (начинается с 1,
+          монотонно возрастает);
+    \item данные клиента (имя, телефон, электронная почта);
+    \item адрес доставки (город, улица, дом, опционально~---
+          квартира и комментарий);
+    \item список позиций (название товара, количество, цена);
+    \item выбранный способ доставки: \emph{Standard delivery},
+          \emph{Express delivery} или \emph{Self pickup};
+    \item назначенного курьера (для способов, которые его
+          предусматривают);
+    \item текущий статус;
+    \item время создания, стоимость и ориентировочный срок
+          доставки.
+\end{itemize}
+
+\section{Примеры работы и описание}
+
+Ниже приведены типовые сценарии работы с программой. Показаны
+последовательности команд и ответы программы. Строки, начинающиеся
+с \texttt{>\ },~--- это то, что вводит пользователь; остальные
+строки~--- вывод программы.
+
+\subsection{Запуск и просмотр списка заказов}
+
+\renewcommand{\baselinestretch}{1}
+\begin{lstlisting}
+$ ./delivery
+[seed] database initialized: 3 clients, 3 orders
+> list_orders
+Id: 1
+Status: Packing
+Delivery type: Standard delivery
+Created at: Mon Oct  6 12:31:04 2025
+ETA: 24 h
+Cost: 400.00
+Client:
+    Name: Alice
+    Phone: +1-555-0101
+    Email: alice@example.com
+Ordered items:
+    2 amount of Coffee beans, 12.500000 each
+    1 amount of Milk 1L, 3.200000 each
+City: Springfield
+Street: 742 Evergreen Terrace
+Building: 1
+--------------------
+Id: 2
+Status: On The Way
+Delivery type: Express delivery
+Created at: Mon Oct  6 12:31:04 2025
+ETA: 12 h
+Cost: 640.00
+Client:
+    Name: Bob
+    Phone: +1-555-0102
+    Email: bob@example.com
+Ordered items:
+    1 amount of Pizza, 9.900000 each
+    2 amount of Cola 0.5L, 1.500000 each
+Courier name: Fast Freddie
+Courier notes:
+  has car
+City: Springfield
+Street: 123 Fake St
+Building: 5B
+--------------------
+Id: 3
+Status: Ready For Pickup
+Delivery type: Self pickup
+Created at: Mon Oct  6 12:31:04 2025
+ETA: 1 h
+Cost: 0.00
+Client:
+    Name: Carol
+    Phone: +1-555-0103
+    Email: carol@example.com
+Ordered items:
+    1 amount of Book 'C Programming', 42.000000 each
+City: Shelbyville
+Street: 1 Main St
+Building: 10
+\end{lstlisting}
+\renewcommand{\baselinestretch}{1.5}
+
+Заказы печатаются по возрастанию идентификатора. Между
+заказами выводится разделительная линия из дефисов. Информация о
+курьере печатается, только если он назначен~--- например, для
+заказа №3 (самовывоз) курьер не предусмотрен.
+
+\subsection{Создание заказа для существующего клиента}
+
+Создание заказа~--- это отдельное меню-визард. Пользователь
+последовательно задаёт поля черновика, может в любой момент
+посмотреть текущее состояние и исправить любое из полей.
+
+\renewcommand{\baselinestretch}{1}
+\begin{lstlisting}
+> new_order
+> client
+client name: Alice
+> address
+city: Springfield
+street: Evergreen Terrace
+building: 742
+apartment (empty to skip):
+comment (empty to skip): Please ring the bell twice
+> show
+Draft order:
+  client:    Alice
+  city:      Springfield
+  street:    Evergreen Terrace
+  building:  742
+  apartment: (unset)
+  comment:   Please ring the bell twice
+> create
+Id: 4
+Status: Packing
+Delivery type: Standard delivery
+Created at: Mon Oct  6 12:34:12 2025
+ETA: 24 h
+Cost: 300.00
+Client:
+    Name: Alice
+    Phone: +1-555-0101
+    Email: alice@example.com
+Ordered items:
+City: Springfield
+Street: Evergreen Terrace
+Building: 742
+Comment:
+  Please ring the bell twice
+>
+\end{lstlisting}
+\renewcommand{\baselinestretch}{1.5}
+
+После успешного \cmd{create} меню автоматически закрывается,
+программа возвращается в главное меню. Поле \cmd{comment}
+оказалось заполнено, \cmd{apartment}~--- нет, поэтому в блоке адреса
+выводится только комментарий.
+
+\subsection{Создание заказа для нового клиента}
+
+Если при создании заказа введено имя клиента, которого нет в
+реестре, программа предлагает создать новую карточку клиента.
+Введённые ранее данные заказа при этом не теряются: они сохраняются
+в черновике, и после регистрации клиента пользователю нужно лишь
+повторно нажать \cmd{create}.
+
+\renewcommand{\baselinestretch}{1}
+\begin{lstlisting}
+> new_order
+> client
+client name: Dave
+> address
+city: Ogdenville
+street: 12 Elm
+building: 3
+apartment (empty to skip): 4A
+comment (empty to skip):
+> create
+error: service errored: user does not exists
+Client 'Dave' not found. Create new client?
+> y
+> show
+Client:
+  name:  Dave
+  email: (unset)
+  phone: (unset)
+> email
+email: dave@example.com
+> phone
+phone: +1-555-0200
+> done
+Client 'Dave' registered. Type 'create' to finish the order, or 'quit' to exit.
+> create
+Id: 5
+Status: Packing
+Delivery type: Standard delivery
+Created at: Mon Oct  6 12:36:48 2025
+ETA: 24 h
+Cost: 300.00
+Client:
+    Name: Dave
+    Phone: +1-555-0200
+    Email: dave@example.com
+Ordered items:
+City: Ogdenville
+Street: 12 Elm
+Building: 3
+Apartment: 4A
+>
+\end{lstlisting}
+\renewcommand{\baselinestretch}{1.5}
+
+Обратите внимание: поле \cmd{name} в карточке клиента уже
+предзаполнено значением \texttt{Dave}, которое пользователь ввёл в
+черновике заказа~--- повторно вводить его не нужно.
+
+\subsection{Добавление позиций в заказ}
+
+\cmd{items} открывает меню работы с позициями конкретного заказа.
+Меню позволяет добавить произвольное количество позиций и завершить
+работу командой \cmd{done}.
+
+\renewcommand{\baselinestretch}{1}
+\begin{lstlisting}
+> items
+order id: 4
+> add
+item name: Espresso beans
+quantity: 3
+price: 15.75
+Item added.
+> add
+item name: Paper filter
+quantity: 1
+price: 4.50
+Item added.
+> done
+Id: 4
+Status: Packing
+Delivery type: Standard delivery
+Created at: Mon Oct  6 12:34:12 2025
+ETA: 24 h
+Cost: 500.00
+Client:
+    Name: Alice
+    Phone: +1-555-0101
+    Email: alice@example.com
+Ordered items:
+    3 amount of Espresso beans, 15.750000 each
+    1 amount of Paper filter, 4.500000 each
+City: Springfield
+Street: Evergreen Terrace
+Building: 742
+Comment:
+  Please ring the bell twice
+>
+\end{lstlisting}
+\renewcommand{\baselinestretch}{1.5}
+
+Стоимость заказа пересчиталась автоматически: после добавления двух
+позиций стандартная доставка стоит \texttt{300 + 50\,$\times$\,4 = 500.00}.
+
+\subsection{Выбор способа доставки}
+
+Меню \cmd{manage} позволяет назначить заказу один из трёх способов
+доставки~--- \cmd{standard}, \cmd{express} или \cmd{pickup}. После
+выбора программа печатает пересчитанную стоимость и срок.
+
+\renewcommand{\baselinestretch}{1}
+\begin{lstlisting}
+> manage
+order id: 4
+> express
+Delivery: Express delivery
+Cost:     780.00
+ETA:      12 h
+>
+\end{lstlisting}
+\renewcommand{\baselinestretch}{1.5}
+
+Смена способа доставки возможна только до тех пор, пока заказ
+находится в статусе \cmd{Packing}. После начала сборки/отправки
+попытка сменить способ отклоняется:
+
+\renewcommand{\baselinestretch}{1}
+\begin{lstlisting}
+> manage
+order id: 2
+error: order kind is frozen after packing started
+>
+\end{lstlisting}
+\renewcommand{\baselinestretch}{1.5}
+
+\subsection{Назначение курьера}
+
+Курьер назначается командой \cmd{assign}. Программа спрашивает имя
+курьера и наличие автомобиля. Для самовывоза (\cmd{pickup}) курьер
+не предусмотрен~--- попытка его назначить завершается ошибкой.
+
+\renewcommand{\baselinestretch}{1}
+\begin{lstlisting}
+> assign
+order id: 4
+courier name: Speedy Gonzales
+Does the courier have a car?
+> y
+> list_orders
+...
+Id: 4
+Status: Packing
+Delivery type: Express delivery
+...
+Courier name: Speedy Gonzales
+Courier notes:
+  has car
+...
+>
+\end{lstlisting}
+\renewcommand{\baselinestretch}{1.5}
+
+\renewcommand{\baselinestretch}{1}
+\begin{lstlisting}
+> assign
+order id: 3
+courier name: John
+Does the courier have a car?
+> n
+error: service errored: this order kind does not need a courier
+>
+\end{lstlisting}
+\renewcommand{\baselinestretch}{1.5}
+
+\subsection{Изменение статуса заказа}
+
+Команда \cmd{status} открывает меню статусов. В нём отображаются
+только те переходы, которые разрешены для текущего способа доставки
+и текущего состояния заказа. Команда \cmd{cancel} закрывает меню
+без изменений.
+
+\renewcommand{\baselinestretch}{1}
+\begin{lstlisting}
+> status
+order id: 4
+Id: 4
+Status: Packing
+Delivery type: Express delivery
+...
+> on_the_way
+Id: 4
+Status: On The Way
+Delivery type: Express delivery
+...
+> status
+order id: 4
+Id: 4
+Status: On The Way
+Delivery type: Express delivery
+...
+> delivered
+Id: 4
+Status: Delivered
+Delivery type: Express delivery
+...
+>
+\end{lstlisting}
+\renewcommand{\baselinestretch}{1.5}
+
+Для самовывоза доступен свой набор переходов:
+\cmd{packing}~$\to$~\cmd{ready\_for\_pickup}~$\to$~\cmd{picked}.
+Если попытаться выбрать статус, которого нет в списке команд меню,
+он просто не будет принят.
+
+\subsection{Обработка ошибочного ввода}
+
+Программа обрабатывает несколько классов ошибок.
+
+\subsubsection*{Несуществующий идентификатор заказа.}
+
+\renewcommand{\baselinestretch}{1}
+\begin{lstlisting}
+> manage
+order id: 42
+error: service errored: no such order with the id
+>
+\end{lstlisting}
+\renewcommand{\baselinestretch}{1.5}
+
+\subsubsection*{Нечисловой идентификатор.}
+
+Функция преобразования возвращает 0, поэтому поиск идёт по
+идентификатору 0, которого не существует:
+
+\renewcommand{\baselinestretch}{1}
+\begin{lstlisting}
+> status
+order id: abc
+error: service errored: no such order with the id
+>
+\end{lstlisting}
+\renewcommand{\baselinestretch}{1.5}
+
+\subsubsection*{Попытка сменить статус до назначения курьера.}
+
+Для стандартной и экспресс-доставки переход в
+\cmd{on\_the\_way} требует предварительно назначенного курьера:
+\renewcommand{\baselinestretch}{1}
+\begin{lstlisting}
+> status
+order id: 1
+Id: 1
+Status: Packing
+Delivery type: Standard delivery
+...
+> on_the_way
+error: service errored: courier is not set yet
+Id: 1
+Status: Packing
+...
+>
+\end{lstlisting}
+\renewcommand{\baselinestretch}{1.5}
+
+\subsubsection*{Некорректные данные клиента.}
+
+При создании карточки клиента программа проверяет email и телефон:
+
+\renewcommand{\baselinestretch}{1}
+\begin{lstlisting}
+> email
+email: notanemail
+> done
+error: invalid email (expected name@domain.tld)
+> phone
+phone: abc
+> done
+error: invalid phone (at least 5 digits, allowed: digits, + - space ( ))
+>
+\end{lstlisting}
+\renewcommand{\baselinestretch}{1.5}
+
+\subsubsection*{Дубликат имени клиента.}
+
+\renewcommand{\baselinestretch}{1}
+\begin{lstlisting}
+> name
+name: Alice
+> done
+error: client 'Alice' already exists; pick a different name
+>
+\end{lstlisting}
+\renewcommand{\baselinestretch}{1.5}
+
+\subsubsection*{Пустой черновик заказа.}
+
+\renewcommand{\baselinestretch}{1}
+\begin{lstlisting}
+> new_order
+> create
+error: fields 'client', 'city', 'street', 'building' are required
+>
+\end{lstlisting}
+\renewcommand{\baselinestretch}{1.5}
+
+\subsubsection*{Неизвестная команда.}
+
+\renewcommand{\baselinestretch}{1}
+\begin{lstlisting}
+> foobar
+Type "help" for getting all commands for current menu
+>
+\end{lstlisting}
+\renewcommand{\baselinestretch}{1.5}
+
+\subsection{Завершение работы}
+
+Выход выполняется командой \cmd{quit} (или \cmd{exit}), а также
+комбинацией \texttt{Ctrl+D}:
+
+\renewcommand{\baselinestretch}{1}
+\begin{lstlisting}
+> quit
+$
+\end{lstlisting}
+\renewcommand{\baselinestretch}{1.5}
+
+Перед завершением программа освобождает все выделенные ресурсы.
+Никаких файлов на диске не создаётся~--- вся работа ведётся в
+оперативной памяти.
 
 \section{Текст программы}
-
+\lstset{style=coolprint}
 \renewcommand{\baselinestretch}{1}
 \input{assets/source}
 \renewcommand{\baselinestretch}{1.5}
 
 \section{Выводы}
+
+В ходе выполнения практической работы была разработана консольная
+программа, моделирующая работу небольшой службы доставки. Программа
+полностью работает в оперативной памяти, не использует внешних
+файлов, баз данных и сетевых запросов, и реализована на языке~C в
+соответствии со стандартом~C89.
+
+\subsection*{Реализованная функциональность}
+
+В соответствии с заданием были реализованы все обязательные
+сценарии работы:
+
+\begin{itemize}
+    \item создание нового заказа с добавлением одной или нескольких
+          позиций;
+    \item просмотр списка существующих заказов;
+    \item выбор способа доставки с автоматическим расчётом стоимости
+          и ориентировочного срока;
+    \item назначение курьера для тех способов доставки, которые его
+          предусматривают;
+    \item перевод заказа по допустимым статусам с проверкой
+          корректности перехода;
+    \item завершение работы по явной команде пользователя
+          (\cmd{quit}, \cmd{exit} или \texttt{Ctrl+D}).
+\end{itemize}
+
+Помимо этого, реализованы обработка ошибочного ввода, валидация
+полей клиента (телефон, электронная почта) и демонстрационное
+наполнение реестров при старте программы, позволяющее сразу
+приступить к работе с уже существующими заказами.
+
+\subsection*{Соблюдение принципов объектно-ориентированного
+программирования}
+
+Несмотря на то что язык~C не поддерживает классы и интерфейсы
+непосредственно, все ключевые принципы ООП были воспроизведены
+средствами языка:
+
+\begin{enumerate}
+    \item \textbf{Инкапсуляция.} Состояние сущностей (\cmd{order},
+          \cmd{client\_data}, \cmd{courier},
+          \cmd{destination\_address}, \cmd{order\_service}) скрыто
+          за непрозрачными указателями; изменение состояния
+          выполняется только через функции-методы, которые проверяют
+          допустимость операции. Например, изменение статуса заказа
+          возможно только через \cmd{order\_change\_status},
+          которая сначала спрашивает у стратегии доставки, разрешён
+          ли такой переход.
+
+    \item \textbf{Композиция.} Заказ содержит клиента, адрес
+          доставки, массив позиций и выбранный способ доставки;
+          сервис заказов содержит реестры клиентов и курьеров, а
+          также массив заказов. Иерархия владения отражена в
+          диаграмме классов.
+
+    \item \textbf{Полиморфизм.} Три способа доставки
+          (\emph{Standard}, \emph{Express}, \emph{Self pickup})
+          реализованы как три конкретные стратегии одного
+          абстрактного интерфейса \cmd{order\_kind}. Общий контракт
+          описан набором методов (\cmd{calc\_cost},
+          \cmd{calc\_estimated\_time}, \cmd{needs\_courier},
+          \cmd{allows\_transition}), а вызовы идут через таблицу
+          виртуальных методов. Благодаря этому код, оформляющий
+          заказ, не содержит проверок типа доставки~--- каждая
+          стратегия сама знает, как считать стоимость, сколько
+          времени займёт доставка и нужен ли ей курьер.
+
+    \item \textbf{Разделение ответственности.} Программа разделена
+          на три слоя: \cmd{runtime} (управление памятью),
+          \cmd{service} (бизнес-логика) и \cmd{tui}
+          (взаимодействие с пользователем). Слой сервисов ничего
+          не знает о консоли, слой TUI ничего не знает о деталях
+          хранения. Связь между ними осуществляется через один
+          указатель \cmd{userdata}.
+\end{enumerate}
+
+\subsection*{Принятые архитектурные решения}
+
+В ходе работы были приняты следующие технические решения,
+обоснованные требованиями задания и выбранным языком:
+
+\begin{itemize}
+    \item \textbf{Арена-аллокатор.} Вся память выделяется в едином
+          контексте (\cmd{context\_alloc}) и освобождается
+          централизованно при завершении программы или при выходе
+          из подконтекста. Это снимает необходимость следить за
+          временем жизни каждого объекта вручную и позволяет
+          сосредоточиться на бизнес-логике.
+
+    \item \textbf{Таблица виртуальных методов.} Для реализации
+          полиморфизма способов доставки использован классический
+          приём~--- структура с указателем на таблицу функций.
+          Перечень методов описан макросом
+          \cmd{ORDER\_KIND\_METHODS}, что обеспечивает единый
+          источник правды: при добавлении нового метода компилятор
+          заставляет реализовать его во всех стратегиях.
+
+    \item \textbf{Собственная хеш-таблица.} Для реестров клиентов
+          и курьеров реализована открытая адресация с битовой
+          картой занятости слотов. Контейнер компактен и достаточен
+          для нагрузки, характерной для данной задачи.
+
+    \item \textbf{Стек меню.} Интерфейс пользователя построен как
+          стек состояний: каждое меню имеет свой набор команд,
+          переход в подменю и возврат выполняются операциями
+          \cmd{menu\_push\_state} и \cmd{menu\_pop\_state}. Такая
+          схема позволяет, например, из меню создания заказа
+          перейти в меню создания клиента, зарегистрировать его и
+          вернуться к тому же черновику заказа, не потеряв
+          введённые данные.
+
+    \item \textbf{Граф допустимых переходов статусов.} Каждый
+          способ доставки описывает свои переходы в виде таблицы
+          пар «откуда--куда». Это делает правила прозрачными и
+          позволяет добавлять новые способы доставки без правки
+          общего кода смены статуса.
+\end{itemize}
+
+\subsection*{Полученные навыки}
+
+В процессе выполнения работы были отработаны:
+
+\begin{itemize}
+    \item проектирование объектной модели предметной области и
+          распределение ответственности между слоями приложения;
+    \item реализация полиморфизма средствами языка без
+          встроенной поддержки классов;
+    \item организация управления памятью с использованием
+          арена-аллокатора и явных границ владения объектами;
+    \item построение конечного автомата состояний и вынесение
+          правил переходов в отдельные сущности;
+    \item разработка интерактивного консольного интерфейса с
+          поддержкой стека меню, подсказок и обработки ошибочного
+          ввода;
+    \item работа с системой контроля версий Git и оформление
+          проекта в виде отдельного репозитория.
+\end{itemize}
+
+\subsection*{Заключение}
+
+Поставленная задача выполнена в полном объёме. Программа
+функционирует согласно требованиям задания, поддерживает все
+заявленные сценарии работы и корректно обрабатывает ошибочные
+ситуации. Использование языка~C потребовало самостоятельной
+реализации ряда механизмов, обычно предоставляемых языками
+высокого уровня (управление памятью, полиморфизм, контейнеры), что
+позволило глубже понять внутреннее устройство соответствующих
+абстракций. Полученный код отделён от конкретного способа
+взаимодействия с пользователем и от конкретного набора способов
+доставки, что делает его расширяемым: добавление четвёртого способа
+доставки сводится к созданию одного нового файла без правок в
+существующей логике.
 
 \end{document}
