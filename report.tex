@@ -1,0 +1,121 @@
+\documentclass[12pt]{extarticle}
+
+\usepackage{tabularx}
+\usepackage{amsmath}
+\usepackage{extsizes}
+\usepackage{graphicx}
+\usepackage{amssymb}
+\usepackage[english,russian]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage[a4paper]{geometry}
+\geometry{top=20mm,bottom=30mm,left=20mm,right=15mm}
+\usepackage[T1,T2A]{fontenc}
+\usepackage{setspace}
+\usepackage{titlesec}
+\usepackage{indentfirst}
+\usepackage{caption}
+\renewcommand{\baselinestretch}{1.5}
+\usepackage{spverbatim}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{tabularray}
+\lstset{extendedchars=\true}
+
+\definecolor{codebg}{gray}{0.96}
+\definecolor{comment}{gray}{0.45}
+\definecolor{keyword}{RGB}{0, 75, 150}
+\definecolor{string}{RGB}{150, 80, 30}
+\definecolor{number}{gray}{0.5}
+\definecolor{identifier}{rgb}{0,0,0}
+
+\lstdefinestyle{coolprint}{
+  basicstyle   = \ttfamily\footnotesize,
+  keywordstyle = \bfseries\color{keyword},
+  commentstyle = \itshape\color{comment},
+  stringstyle  = \color{string},
+  identifierstyle = \color{identifier},
+  backgroundcolor = \color{codebg},
+  numbers      = left,
+  numberstyle  = \footnotesize\color{number},
+  numbersep    = 5pt,
+  frame        = single,
+  framerule    = 0.8pt,
+  framesep     = 3pt,
+  breaklines   = true,
+  breakatwhitespace = true,
+  tabsize      = 4,
+  showspaces   = false,
+  showstringspaces = false,
+  showtabs     = false,
+  xleftmargin  = 10pt,
+  xrightmargin = 5pt,
+  aboveskip    = \medskipamount,
+  belowskip    = \medskipamount,
+  captionpos   = b,
+}
+\lstset{style=coolprint}
+
+\usepackage{ragged2e}
+\justifying
+
+\titleformat{\section}{\centering\bfseries}{\thesection}{1em}{}
+
+\begin{document}
+
+\begin{center}
+  \textbf{МИНОБРНАУКИ РОССИИ} \\
+  \textbf{Санкт-Петербургский государственный} \\
+  \textbf{электротехнический университет} \\
+  \textbf{«ЛЭТИ» им. В.И. Ульянова (Ленина)} \\
+  \textbf{Кафедра САПР} \\
+\end{center}
+
+\vspace{0.25\textheight}
+
+\begin{center}
+\textbf{Практическая работа №1} \\
+\textbf{по дисциплине} \\
+\textbf{«Объектно-ориентированное программирование»} \\
+\end{center}
+
+\vspace*{\fill}
+
+\begin{center}
+\begin{tabularx}{\textwidth}{ l X r }
+ Студент гр. 5352 & \rule{8cm}{0.2mm} & Cоболевский М.А. \\
+ Преподаватель & \rule{8cm}{0.2mm} & Кулагин М.В. \\
+\end{tabularx}
+\end{center}
+
+\vspace{3em}
+
+\begin{center}
+Санкт-Петербург\\
+\the\year
+\end{center}
+
+\thispagestyle{empty}
+
+\pagebreak
+
+\section{Задание}
+
+Разработать консольное приложение, которое моделирует работу небольшой службы доставки.
+
+Программа работает только в памяти: внешние файлы, база данных, сетевые запросы и графический интерфейс не являются обязательными.
+
+Пользователь должен иметь возможность создать заказ, выбрать способ доставки, назначить курьера, просмотреть список заказов и переводить заказ по допустимым статусам. В программе должны быть предусмотрены корректная обработка ошибочного ввода и понятные сообщения для пользователя.
+
+\section{Спецификация программы}
+
+\section{Описание интерфейса пользователя программы}
+
+\section{Текст программы}
+
+\renewcommand{\baselinestretch}{1}
+\input{assets/source}
+\renewcommand{\baselinestretch}{1.5}
+
+\section{Выводы}
+
+\end{document}

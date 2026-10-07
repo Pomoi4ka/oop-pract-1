@@ -1,3 +1,6 @@
 main
 *.o
 *.d
+*.aux
+*.log
+assets/*.tex
