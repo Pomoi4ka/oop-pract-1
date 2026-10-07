@@ -1,0 +1,273 @@
+// delivery-service-uml.dot
+// Компиляция: dot -Tsvg delivery-service-uml.dot -o uml.svg
+// (или png/svg/pdf — на выбор)
+
+digraph DeliveryServiceUML {
+    rankdir=TB;
+    compound=true;
+    fontname="Helvetica";
+    fontsize=11;
+    node [shape=record, fontname="Helvetica", fontsize=10];
+    edge [fontname="Helvetica", fontsize=9, fontcolor="#444444"];
+
+    /* ============================================================
+     *  RUNTIME (arena + hashmap)
+     * ============================================================ */
+    subgraph cluster_runtime {
+        label="runtime/ + hashmap";
+        style=dashed;
+        color="#888888";
+        fontcolor="#666666";
+
+        context [
+            label="{context|allocations : context_alloc_hdr *\lexception_handler : jmp_buf\l|\
++ context_alloc(c, size) : void *\l\
++ context_free(p) : void\l\
++ context_from_alloc(p) : context *\l\
++ context_strdup(c, s) : char *\l\
++ context_quit(c)\l\
++ context_enter(fn)\l}"
+        ];
+
+        context_alloc_hdr [
+            label="{context_alloc_hdr|magic : int\lnext, prev : hdr *\lparent : context *\l}"
+        ];
+
+        hashmap [
+            label="{hashmap|items : void *\lbitmap : uchar *\lcount, cap : size_t\litemsize : size_t\lhasheq : hasheq_f\l|\
++ hashmap_create(ctx, heq, sz)\l\
++ hashmap_get(base, key) : void *\l\
++ hashmap_insert(base, kv) : int\l\
++ hashmap_next(base, iter) : void *\l\
++ hashmap_get_count(base) : size_t\l}"
+        ];
+
+        hasheq_f [shape=ellipse, style=dashed,
+                  label="«typedef»\lhasheq_f\l(op, a, b) : uint"];
+    }
+
+    /* ============================================================
+     *  SERVICE (domain)
+     * ============================================================ */
+    subgraph cluster_service {
+        label="service/ (domain)";
+        style=solid;
+        color="#333333";
+        fontcolor="#333333";
+
+        /* ---- order_service ---- */
+        order_service [
+            label="{order_service|ctx : context *\l\
+client_registry : hashmap *\l\
+courier_registry : hashmap *\l\
+standard, express, pickup : order_kind *\l\
+orders : order **\l\
+count, cap : size_t\l\
+next_id : int\l\
+err : order_service_error\l|\
++ create(ctx) : order_service *\l\
++ create_order(s, name, addr) : order *\l\
++ find(s, id) : order *\l\
++ add_item(s, id, name, qty, price)\l\
++ set_kind(s, id, kind)\l\
++ assign_courier(s, id, name, notes)\l\
++ change_status(s, id, st)\l\
++ register_client(s, cd) : int\l\
++ list(s)\l\
++ get_error(s) : order_service_error\l}"
+        ];
+
+        /* ---- order ---- */
+        order [
+            label="{order|info : order_info\l\
+kind : order_kind *\l\
+status : order_status\l\
+courier : courier *\l|\
++ order_create(ctx, id, cl, addr, k)\l\
++ add_item(o, name, q, price)\l\
++ assign_courier(o, c) : int\l\
++ change_status(o, st) : transition_result\l\
++ calc_cost(o) : double\l\
++ calc_eta_hours(o) : double\l\
++ can_change_status(o, st) : int\l\
++ set_order_kind(o, k)\l}"
+        ];
+
+        order_info [
+            label="{«struct» order_info|id : int\l\
+client : client_data *\l\
+items : order_item *\l\
+items_count, cap : size_t\l\
+created_at : time_t\l\
+dest_addr : destination_address *\l}"
+        ];
+
+        order_item [
+            label="{«struct» order_item|name : char *\lquantity : int\lprice : float\l}"
+        ];
+
+        /* ---- entities ---- */
+        client_data [
+            label="{client_data|name : char *\lphone : char *\lemail : char *\l|\
++ client_heapify(ctx, cd)\l\
++ client_validate_phone(s) : int\l\
++ client_validate_email(s) : int\l\
++ client_print(cd, pad)\l\
++ client_hasheq(op, a, b)\l}"
+        ];
+
+        courier [
+            label="{courier|name : char *\lnotes : int\l|\
++ courier_create(ctx, name, notes)\l\
++ courier_print(c, pad)\l\
++ courier_hasheq(op, a, b)\l}"
+        ];
+
+        destination_address [
+            label="{destination_address|city : char *\lstreet : char *\lbuilding : char *\lapartment : char *\lcomment : char *\l|\
++ destination_address_create(...)\l\
++ destination_address_print(a, pad)\l}"
+        ];
+
+        /* ---- delivery method (Strategy / vtable) ---- */
+        order_kind [
+            label="{«abstract»\lorder_kind|vptr : order_kind_vtable *\lname : char *\l}"
+        ];
+
+        order_kind_vtable [
+            label="{order_kind_vtable|\
+calc_cost(kind, o) : float\l\
+calc_estimated_time(kind, o) : float\l\
+needs_courier(kind, o) : int\l\
+allows_transition(kind, o, st) : result\l}"
+        ];
+
+        standard [
+            label="{standard_order_kind|base : order_kind\l\
+base_price : float\l\
+per_item : float\l|\
++ order_kind_standard_create(ctx)\l}"
+        ];
+
+        express [
+            label="{express_order_kind|base : order_kind\l\
+base_price : float\l\
+per_item : float\l|\
++ order_kind_express_create(ctx)\l}"
+        ];
+
+        pickup [
+            label="{pickup_order_kind|base : order_kind\l\
+base_price : float\l\
+per_item : float\l|\
++ order_kind_pickup_create(ctx)\l}"
+        ];
+
+        order_status [shape=ellipse, style=dashed,
+                      label="«enum»\lorder_status\lPACKING\lREADY_FOR_PICKUP\lON_THE_WAY\lDELIVERED\lPICKED"];
+
+        order_service_error [shape=ellipse, style=dashed,
+                             label="«enum»\lorder_service_error\lNONE\lCLIENT_DOESNOT_EXISTS\lNO_SUCH_ORDER\lCOURIER_NOT_SET\lINVALID_NEW_STATUS\lKIND_DOES_NOT_NEED_COURIER\lKIND_FROZEN"];
+
+        db_seed [
+            shape=note,
+            label="db_seed(ctx, svc)\l(фабрика демо-данных)"
+        ];
+    }
+
+    /* ============================================================
+     *  TUI (presentation)
+     * ============================================================ */
+    subgraph cluster_tui {
+        label="tui/ (presentation)";
+        style=dashed;
+        color="#888888";
+        fontcolor="#666666";
+
+        menu [
+            label="{menu|stack : menu_state_list *\luserdata : void *\linput : char *\lmatch : int\l|\
++ menu_create(ctx)\l\
++ menu_push_state(m, s)\l\
++ menu_pop_state(m)\l\
++ menu_get_state(m) : menu_state *\l\
++ menu_input(m)\l\
++ menu_prompt(m, p) : const char *\l\
++ menu_get_userdata(m) : void *\l}"
+        ];
+
+        menu_state [
+            label="{«abstract»\lmenu_state|commands : menu_command *\l}"
+        ];
+
+        menu_command [
+            label="{menu_command|command : char *\ldescription : char *\lrun(m) : void\l}"
+        ];
+
+        menu_action [shape=ellipse, style=dashed,
+                     label="«typedef»\lmenu_action\l(m : menu *, ud : void *)"];
+
+        main_menu            [label="{main_menu|(commands[])\l}"];
+        new_order_menu       [label="{new_order_menu|draft : order_draft\l}"];
+        client_creation_menu [label="{client_creation_menu|data : client_data *\l}"];
+        items_menu           [label="{items_menu|order_id : int\l}"];
+        manage_menu          [label="{manage_menu|order_id : int\l}"];
+        status_menu          [label="{status_menu|order_id : int\lcmds : menu_command[N]\l}"];
+        yes_no_menu          [label="{yes_no_menu|on_yes : menu_action\lon_no : menu_action\luserdata : void *\l}"];
+    }
+
+    /* ============================================================
+     *  RELATIONS
+     * ============================================================ */
+
+    /* --- runtime internals --- */
+    context_alloc_hdr -> context [label="parent", arrowhead=vee, style=solid];
+    hashmap -> context         [label="alloc in", arrowhead=vee, style=dashed, constraint=false];
+    hashmap -> hasheq_f        [label="uses", arrowhead=vee, style=dashed, constraint=false];
+
+    /* --- service composition --- */
+    order_service -> context   [label="ctx",       arrowhead=diamond, style=solid];
+    order_service -> hashmap   [label="registries",arrowhead=diamond, style=solid];
+    order_service -> order     [label="orders[]",  arrowhead=diamond, style=solid];
+    order_service -> order_kind[label="singletons",arrowhead=vee, style=solid, constraint=false];
+
+    /* --- order composition --- */
+    order     -> order_info          [label="info",      arrowhead=diamond];
+    order_info-> order_item          [label="items[]",   arrowhead=diamond];
+    order     -> order_kind          [label="kind",      arrowhead=vee];
+    order     -> courier             [label="courier",   arrowhead=vee];
+    order_info-> client_data         [label="client",    arrowhead=vee];
+    order_info-> destination_address [label="dest_addr", arrowhead=vee];
+
+    /* --- Strategy (vtable) --- */
+    order_kind -> order_kind_vtable [label="vptr", arrowhead=diamond];
+    standard   -> order_kind        [label="«extends»", arrowhead=empty];
+    express    -> order_kind        [label="«extends»", arrowhead=empty];
+    pickup     -> order_kind        [label="«extends»", arrowhead=empty];
+
+    /* --- TUI internals --- */
+    menu       -> menu_state    [label="stack of", arrowhead=diamond];
+    menu_state -> menu_command  [label="commands[]", arrowhead=diamond];
+    menu       -> menu_action   [style=dashed, arrowhead=vee, constraint=false];
+    yes_no_menu-> menu_action   [label="on_yes/on_no", style=dashed, arrowhead=vee, constraint=false];
+
+    main_menu            -> menu_state [label="«extends»", arrowhead=empty];
+    new_order_menu       -> menu_state [label="«extends»", arrowhead=empty];
+    client_creation_menu -> menu_state [label="«extends»", arrowhead=empty];
+    items_menu           -> menu_state [label="«extends»", arrowhead=empty];
+    manage_menu          -> menu_state [label="«extends»", arrowhead=empty];
+    status_menu          -> menu_state [label="«extends»", arrowhead=empty];
+    yes_no_menu          -> menu_state [label="«extends»", arrowhead=empty];
+
+    /* --- TUI -> service --- */
+    menu         -> order_service [label="userdata", style=dashed, arrowhead=vee, constraint=false];
+    new_order_menu -> client_creation_menu [label="pushes", style=dashed, arrowhead=vee, constraint=false];
+    new_order_menu -> yes_no_menu          [label="pushes", style=dashed, arrowhead=vee, constraint=false];
+    main_menu    -> new_order_menu         [label="pushes", style=dashed, arrowhead=vee, constraint=false];
+    main_menu    -> items_menu             [label="pushes", style=dashed, arrowhead=vee, constraint=false];
+    main_menu    -> manage_menu            [label="pushes", style=dashed, arrowhead=vee, constraint=false];
+    main_menu    -> status_menu            [label="pushes", style=dashed, arrowhead=vee, constraint=false];
+    main_menu    -> yes_no_menu            [label="pushes", style=dashed, arrowhead=vee, constraint=false];
+
+    /* --- seed --- */
+    db_seed -> order_service [style=dotted, arrowhead=vee, constraint=false];
+}

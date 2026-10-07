@@ -14,9 +14,12 @@ all: main
 main: $(OBJS)
 	$(CC) $(CFLAGS) -o $@ $(OBJS) $(LIBS)
 
-pdf: assets/source.tex
+pdf: assets/source.tex assets/delivery-service-uml.png assets/delivery-status-fsm.png
 	pdflatex report.tex
 	pdflatex report.tex
+
+assets/%.png: assets/%.dot
+	dot -Tpng $< -o $@
 
 assets/source.tex: assets $(SRCS_WITH_HEADERS)
 	($(foreach src,$(SRCS_WITH_HEADERS), \

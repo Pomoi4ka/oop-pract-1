@@ -1,0 +1,45 @@
+// delivery-status-fsm.dot
+// dot -Tsvg delivery-status-fsm.dot -o fsm.svg
+
+digraph OrderStatusFSM {
+    rankdir=LR;
+    fontname="Helvetica";
+    node [shape=box, style=rounded, fontname="Helvetica"];
+    edge [fontname="Helvetica", fontsize=9];
+
+    /* ---- common nodes ---- */
+    packing [label="PACKING"];
+    ready   [label="READY_FOR_PICKUP"];
+    way     [label="ON_THE_WAY"];
+    delivered [label="DELIVERED", style="rounded,filled", fillcolor="#e6ffe6"];
+    picked  [label="PICKED",      style="rounded,filled", fillcolor="#e6ffe6"];
+
+    /* ---- Standard / Express ---- */
+    subgraph cluster_std {
+        label="Standard delivery";
+        color="#cce0ff";
+        packing -> way       [label="start  [courier set]"];
+        way     -> delivered [label="deliver"];
+    }
+
+    subgraph cluster_exp {
+        label="Express delivery";
+        color="#ffe0cc";
+        packing -> way       [label="start  [courier set]", style=dashed];
+        way     -> delivered [label="deliver",               style=dashed];
+    }
+
+    /* ---- Pickup ---- */
+    subgraph cluster_pkp {
+        label="Self pickup";
+        color="#e6e6ff";
+        packing -> ready [label="ready", color="#6644aa", penwidth=1.5];
+        ready   -> picked[label="picked", color="#6644aa", penwidth=1.5];
+    }
+
+    /* ---- legend ---- */
+    note [shape=note, style=filled, fillcolor="#fffbe6",
+          label="Пунктир = та же семантика\lСплошной = разные переходы по типам\l\
+                                                          ANY → INVALID: not in table\l\
+                                                          PACKING → ON_THE_WAY: требует courier"];
+}
