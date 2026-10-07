@@ -9,7 +9,7 @@ SRCS_WITH_HEADERS := $(shell find src/ -type f -name '*.h') $(SRCS)
 
 .PHONY: all pdf
 
-all: main
+all: main pdf
 
 main: $(OBJS)
 	$(CC) $(CFLAGS) -o $@ $(OBJS) $(LIBS)
@@ -19,7 +19,7 @@ pdf: assets/source.tex assets/delivery-service-uml.png assets/delivery-status-fs
 	pdflatex report.tex
 
 assets/%.png: assets/%.dot
-	dot -Tpng $< -o $@
+	dot -Tpng $< -o $@ || :
 
 assets/source.tex: assets $(SRCS_WITH_HEADERS)
 	($(foreach src,$(SRCS_WITH_HEADERS), \
